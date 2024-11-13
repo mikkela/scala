@@ -8,7 +8,7 @@ def isBalanced(input: String): Boolean =
     char match
       case '(' => stack = char :: stack // Push opening parenthesis to stack
       case ')' =>
-        if (stack.isEmpty || stack.head != '(') return false // Unmatched closing parenthesis
+        if stack.isEmpty || stack.head != '(' then return false // Unmatched closing parenthesis
         stack = stack.tail // Pop the matching opening parenthesis
       case _ => // Ignore other characters
 

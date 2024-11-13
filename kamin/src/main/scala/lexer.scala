@@ -52,5 +52,5 @@ class Lexer(separators: => Seq[Token], keywords: => Seq[Token]):
           case _ => lexToken()
 
 implicit class StringExtensions(val s: String) extends AnyVal {
-  def removeComment: String = s.takeWhile(_ != ';')
+  def removeComment(): String = s.takeWhile(_ != ';')
 }
