@@ -28,5 +28,6 @@ def main(): Unit = {
         input = input + lineReader.readLine(">")
 
       println("Entered: " + input)
+      BasicLexer.tokens(input).foreach(println)
 }
 
