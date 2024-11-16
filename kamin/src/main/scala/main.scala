@@ -16,16 +16,28 @@ private def isBalanced(input: String): Boolean =
   }
   stack.isEmpty // If stack is empty, all parentheses were balanced
 
-implicit class StringExtensions(val s: String) extends AnyVal {
+implicit class StringExtensions(val s: String) extends AnyVal: 
   def removeComment(): String = s.takeWhile(_ != ';')
-}
 
 @main
-def main(): Unit = {
+def main(): Unit =
   val terminal = TerminalBuilder.terminal()
   val lineReader = LineReaderBuilder.builder().terminal(terminal).build()
-
   given parserContext: BasicLanguageFamilyParserContext = BasicParserContext
+  given environment: Environment = GlobalAndLocalScopeEnvironment()
+  given functionDefinitionTable: FunctionDefinitionTable = FunctionDefinitionTable()
+
+  def error(e: String): Unit =
+    println("Error: " + e)
+
+  def registerFunction(f: FunctionDefinitionNode): Unit =
+    functionDefinitionTable.register(f)
+    println(f.function)
+
+  def evaluateExpression(e: ExpressionNode): Unit =
+    e.evaluate match
+      case Left(e) => error(e)
+      case Right(value) => println(value)
   var continue = true
   while continue do
     var input = lineReader.readLine("->").removeComment()
@@ -35,7 +47,10 @@ def main(): Unit = {
       while !isBalanced(input) do
         input = input + " " + lineReader.readLine(">").removeComment()
 
-      val ast = BasicParser.parse(PeekingIterator[Token](BasicLexer.tokens(input)))
-      println(ast)
-}
+      BasicParser.parse(PeekingIterator[Token](BasicLexer.tokens(input))) match
+        case Left(e) => error(e)
+        case Right(f: FunctionDefinitionNode) =>
+          registerFunction(f)
+        case Right(e: ExpressionNode) =>
+          evaluateExpression(e)
 
