@@ -16,7 +16,7 @@ private def isBalanced(input: String): Boolean =
   }
   stack.isEmpty // If stack is empty, all parentheses were balanced
 
-implicit class StringExtensions(val s: String) extends AnyVal: 
+implicit class StringExtensions(val s: String) extends AnyVal:
   def removeComment(): String = s.takeWhile(_ != ';')
 
 @main
@@ -30,14 +30,17 @@ def main(): Unit =
   def error(e: String): Unit =
     println("Error: " + e)
 
-  def registerFunction(f: FunctionDefinitionNode): Unit =
+  def registerFunction(f: FunctionDefinitionNode): String =
     functionDefinitionTable.register(f)
-    println(f.function)
+    f.function
 
-  def evaluateExpression(e: ExpressionNode): Unit =
+  def evaluateExpression(e: ExpressionNode): Option[Int] =
     e.evaluate match
-      case Left(e) => error(e)
-      case Right(value) => println(value)
+      case Left(e) =>
+        error(e)
+        None
+      case Right(value) => Some(value)
+
   var continue = true
   while continue do
     var input = lineReader.readLine("->").removeComment()
@@ -50,7 +53,7 @@ def main(): Unit =
       BasicParser.parse(PeekingIterator[Token](BasicLexer.tokens(input))) match
         case Left(e) => error(e)
         case Right(f: FunctionDefinitionNode) =>
-          registerFunction(f)
+          println(registerFunction(f))
         case Right(e: ExpressionNode) =>
-          evaluateExpression(e)
+          evaluateExpression(e).foreach(println)
 
