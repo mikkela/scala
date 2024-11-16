@@ -8,24 +8,24 @@ class BasicLexerSpec extends AnyFunSpec
 
   private val singleTokenTable = Table(
     ("Text", "Is Token"),
-    ("(", Token(TokenType.LeftParenthesis, "(")),
-    (")", Token(TokenType.RightParenthesis, ")")),
-    ("=", Token(TokenType.Equal, "=")),
-    ("+", Token(TokenType.Plus, "+")),
-    ("-", Token(TokenType.Minus, "-")),
-    ("*", Token(TokenType.Asterisk, "*")),
-    ("/", Token(TokenType.Slash, "/")),
-    ("<", Token(TokenType.LessThan, "<")),
-    (">", Token(TokenType.GreaterThan, ">")),
-    ("define", Token(TokenType.Define, "define")),
-    ("print", Token(TokenType.Print, "print")),
-    ("if", Token(TokenType.If, "if")),
-    ("while", Token(TokenType.While, "while")),
-    ("set", Token(TokenType.Set, "set")),
-    ("begin", Token(TokenType.Begin, "begin")),
-    ("abe", Token(TokenType.Name, "abe")),
-    ("-345", Token(TokenType.Integer, "-345")),
-    ("56", Token(TokenType.Integer, "56"))
+    ("(", LeftParenthesisToken),
+    (")", RightParenthesisToken),
+    ("=", EqualToken),
+    ("+", PlusToken),
+    ("-", MinusToken),
+    ("*", AsteriskToken),
+    ("/", SlashToken),
+    ("<", LessThanToken),
+    (">", GreaterThanToken),
+    ("define", DefineToken),
+    ("print", PrintToken),
+    ("if", IfToken),
+    ("while", WhileToken),
+    ("set", SetToken),
+    ("begin", BeginToken),
+    ("abe", NameToken("abe")),
+    ("-345", IntegerValueToken("-345")),
+    ("56", IntegerValueToken("56"))
   )
 
   describe("toToken method") {
