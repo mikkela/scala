@@ -15,6 +15,11 @@ private def isBalanced(input: String): Boolean =
         case _ => // Ignore other characters
   }
   stack.isEmpty // If stack is empty, all parentheses were balanced
+
+implicit class StringExtensions(val s: String) extends AnyVal {
+  def removeComment(): String = s.takeWhile(_ != ';')
+}
+
 @main
 def main(): Unit = {
   val terminal = TerminalBuilder.terminal()

@@ -50,7 +50,3 @@ class Lexer(separators: => Seq[Token], keywords: => Seq[Token]):
             advance()
             toToken(c.toString)
           case _ => lexToken()
-
-implicit class StringExtensions(val s: String) extends AnyVal {
-  def removeComment(): String = s.takeWhile(_ != ';')
-}
