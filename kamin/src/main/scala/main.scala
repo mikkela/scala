@@ -23,12 +23,12 @@ def main(): Unit = {
   given parserContext: BasicLanguageFamilyParserContext = BasicParserContext
   var continue = true
   while continue do
-    var input = lineReader.readLine("->")
+    var input = lineReader.readLine("->").removeComment()
 
     if (input == "exit") continue = false
     else
       while !isBalanced(input) do
-        input = input + lineReader.readLine(">")
+        input = input + " " + lineReader.readLine(">").removeComment()
 
       val ast = BasicParser.parse(PeekingIterator[Token](BasicLexer.tokens(input)))
       println(ast)
