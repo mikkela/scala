@@ -3,7 +3,7 @@ import org.jline.terminal.TerminalBuilder
 
 import scala.util.control.Breaks.{break, breakable}
 
-def isBalanced(input: String): Boolean =
+private def isBalanced(input: String): Boolean =
   var stack = List[Char]()
 
   breakable {
