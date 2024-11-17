@@ -25,5 +25,6 @@ class GlobalAndLocalScopeEnvironment extends Environment:
 
   override def set(key: String, value: Int): Unit =
     localScopes.headOption match
-      case Some(scope) => scope.put(key, Some(value))
+      case Some(scope) => 
+        if scope.contains(key) then scope.put(key, Some(value)) else globalScope.put(key, Some(value))
       case _ => globalScope.put(key, Some(value))

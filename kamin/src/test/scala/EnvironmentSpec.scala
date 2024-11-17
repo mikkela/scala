@@ -36,8 +36,12 @@ class EnvironmentSpec extends AnyFunSpec with Matchers {
       val env = GlobalAndLocalScopeEnvironment()
       env.set("x", 42)
       env.openScope(Seq("y"))
-      env.get("x") shouldEqual Some(42)
+      env.set("x", 44)
+      env.get("x") shouldEqual Some(44)
+      env.closeScope()
+      env.get("x") shouldEqual Some(44)
     }
+    
 
     it("should close the local scope and return to the global scope value") {
       val env = GlobalAndLocalScopeEnvironment()
