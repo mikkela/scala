@@ -19,6 +19,7 @@ class BasicLexerSpec extends AnyFunSpec
     (">", GreaterThanToken),
     ("define", DefineToken),
     ("print", PrintToken),
+    ("read", ReadToken),
     ("if", IfToken),
     ("while", WhileToken),
     ("set", SetToken),

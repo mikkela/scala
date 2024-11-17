@@ -1192,6 +1192,47 @@ class ParserSpec extends AnyFunSpec
     }
   }
 
+  describe("Read expression node parsers") {
+    it("should return a read expression node when presented with empty list of expressions") {
+      val results = Seq().iterator
+
+      val peekingIterator = PeekingIterator(Seq(
+        LeftParenthesisToken, ReadToken,
+        RightParenthesisToken
+      ).iterator)
+      val context = new BasicLanguageFamilyParserContext {
+        override def parseExpression(tokens: PeekingIterator[Token]): Either[String, ExpressionNode] =
+          peekingIterator.consumeTokens(1)
+          results.next()
+      }
+
+      val sut = new ReadExpressionNodeParser {}
+
+      sut.parse(peekingIterator)(using context) shouldBe Right(ReadExpressionNode())
+    }
+
+    it("should return an error when presented with too many expressions") {
+      val expression = mock[ExpressionNode]
+
+      val results = Seq(Right(expression)).iterator
+
+      val peekingIterator = PeekingIterator(Seq(
+        LeftParenthesisToken, ReadToken,
+        NameToken("eaten"),
+        RightParenthesisToken
+      ).iterator)
+      val context = new BasicLanguageFamilyParserContext {
+        override def parseExpression(tokens: PeekingIterator[Token]): Either[String, ExpressionNode] =
+          peekingIterator.consumeTokens(1)
+          results.next()
+      }
+
+      val sut = new ReadExpressionNodeParser {}
+
+      sut.parse(peekingIterator)(using context) shouldBe Left("read requires 0 arguments")
+    }
+  }
+
   describe("Function call expression node parsers") {
     it("should return a function call expression node when presented with valid list of expressions") {
       val expression = mock[ExpressionNode]

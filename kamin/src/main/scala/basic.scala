@@ -1,7 +1,7 @@
 object BasicLexer extends Lexer(
   Seq(LeftParenthesisToken, RightParenthesisToken),
   Seq(EqualToken, LessThanToken, GreaterThanToken, PlusToken, MinusToken, AsteriskToken, SlashToken, PrintToken,
-    DefineToken, IfToken, WhileToken, SetToken, BeginToken)
+    ReadToken, DefineToken, IfToken, WhileToken, SetToken, BeginToken)
 )
 
 object BasicFunDefNodeParser extends FunctionDefinitionNodeParser
@@ -20,6 +20,7 @@ object BasicExpressionNodeParser extends IntegerValueExpressionNodeParser
   with LessThanExpressionNodeParser
   with GreaterThanExpressionNodeParser
   with PrintExpressionNodeParser
+  with ReadExpressionNodeParser
   with FunctionCallExpressionNodeParser
 
 object BasicParser extends Parser[FunctionDefinitionNode | ExpressionNode, BasicLanguageFamilyParserContext]:

@@ -28,6 +28,8 @@ object DefineToken extends Token:
   override def literal: String = "define"
 object PrintToken extends Token:
   override def literal: String = "print"
+object ReadToken extends Token:
+  override def literal: String = "read"
 object IfToken extends Token:
   override def literal: String = "if"
 object WhileToken extends Token:

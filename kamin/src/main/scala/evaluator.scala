@@ -1,4 +1,6 @@
 import scala.annotation.tailrec
+import scala.io.StdIn
+import scala.util.{Try, Success, Failure}
 
 trait Evaluator[T <: ExpressionNode]:
   extension (t: T) def evaluate(using environment: Environment)(using functionDefinitionTable: FunctionDefinitionTable): Either[String, Int]
@@ -38,6 +40,8 @@ given Evaluator[ExpressionNode] with
         summon[Evaluator[GreaterThanExpressionNode]].evaluate(n)(using environment)(using functionDefinitionTable)
       case n: PrintExpressionNode =>
         summon[Evaluator[PrintExpressionNode]].evaluate(n)(using environment)(using functionDefinitionTable)
+      case n: ReadExpressionNode =>
+        summon[Evaluator[ReadExpressionNode]].evaluate(n)(using environment)(using functionDefinitionTable)
       case null =>
         Left("Not implemented")
 
@@ -183,3 +187,12 @@ given Evaluator[PrintExpressionNode] with
       case Right(params) =>
         println(params.head)
         Right(params.head)
+
+given Evaluator[ReadExpressionNode] with
+  extension (t: ReadExpressionNode) override def evaluate(using environment: Environment)(using functionDefinitionTable: FunctionDefinitionTable): Either[String, Int] =
+    val input = StdIn.readLine()
+
+    Try(input.toInt) match {
+      case Success(number) => Right(number)
+      case Failure(_) => Left(s"$input not a valid integer!")
+    }

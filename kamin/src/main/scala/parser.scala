@@ -257,6 +257,11 @@ trait PrintExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFami
     parseOperator(tokens, _.isToken(PrintToken), Some(1), (_, expressions) => PrintExpressionNode(expressions.head),
       context, tokens => super.parse(tokens)(using context))
 
+trait ReadExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyParserContext]:
+  override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, ExpressionNode] =
+    parseOperator(tokens, _.isToken(ReadToken), Some(0), (_, expressions) => ReadExpressionNode(),
+      context, tokens => super.parse(tokens)(using context))
+
 trait FunctionCallExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyParserContext]:
   override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, ExpressionNode] =
     parseOperator(tokens, _.isNameToken, None, (name, expressions) => FunctionCallExpressionNode(name, expressions),

@@ -31,6 +31,7 @@ case class EqualityExpressionNode(operand1: ExpressionNode, operand2: Expression
 case class LessThanExpressionNode(operand1: ExpressionNode, operand2: ExpressionNode) extends ExpressionNode
 case class GreaterThanExpressionNode(operand1: ExpressionNode, operand2: ExpressionNode) extends ExpressionNode
 case class PrintExpressionNode(argument: ExpressionNode) extends ExpressionNode
+case class ReadExpressionNode() extends ExpressionNode
 
 case class FunctionCallExpressionNode(function: String, expressions: Seq[ExpressionNode]) extends ExpressionNode
 
