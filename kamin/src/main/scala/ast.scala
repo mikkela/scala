@@ -7,7 +7,7 @@ case class FunctionDefinitionNode(function: String, arguments: Seq[String], expr
 
 sealed trait ExpressionNode extends InputNode
 
-case class IntegerExpressionNode(integerValue: Int) extends ExpressionNode
+case class IntegerValueExpressionNode(integerValue: Int) extends ExpressionNode
 
 case class VariableExpressionNode(variableExpression: String) extends ExpressionNode
 

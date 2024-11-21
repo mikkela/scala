@@ -132,7 +132,7 @@ class ParserSpec extends AnyFunSpec
       val peekingIterator: PeekingIterator[Token] = PeekingIterator(Seq(IntegerValueToken("96575")).iterator)
       val sut = new IntegerValueExpressionNodeParser {}
 
-      sut.parse(peekingIterator)(using context = null) shouldBe Right(IntegerExpressionNode(96575))
+      sut.parse(peekingIterator)(using context = null) shouldBe Right(IntegerValueExpressionNode(96575))
     }
 
     it("should return an error when presented with a non-integer") {

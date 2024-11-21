@@ -112,7 +112,7 @@ trait IntegerValueExpressionNodeParser extends Parser[ExpressionNode, BasicLangu
     checkTokensForPresence(tokens, _.isIntegerValueToken) match
       case Right(Seq(value)) =>
         tokens.consumeTokens(1)
-        Right(IntegerExpressionNode(value.literal.toInt))
+        Right(IntegerValueExpressionNode(value.literal.toInt))
       case _ => super.parse(tokens)
 
 

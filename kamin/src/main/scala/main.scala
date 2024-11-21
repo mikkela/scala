@@ -23,23 +23,10 @@ implicit class StringExtensions(val s: String) extends AnyVal:
 def main(): Unit =
   val terminal = TerminalBuilder.terminal()
   val lineReader = LineReaderBuilder.builder().terminal(terminal).build()
-  given parserContext: BasicLanguageFamilyParserContext = BasicParserContext
-  given environment: Environment = GlobalAndLocalScopeEnvironment()
-  given functionDefinitionTable: FunctionDefinitionTable = FunctionDefinitionTable()
+  val evaluator: Evaluator = BasicEvaluator()
 
   def error(e: String): Unit =
     println("Error: " + e)
-
-  def registerFunction(f: FunctionDefinitionNode): String =
-    functionDefinitionTable.register(f)
-    f.function
-
-  def evaluateExpression(e: ExpressionNode): Option[Int] =
-    e.evaluate match
-      case Left(e) =>
-        error(e)
-        None
-      case Right(value) => Some(value)
 
   var continue = true
   while continue do
@@ -50,10 +37,5 @@ def main(): Unit =
       while !isBalanced(input) do
         input = input + " " + lineReader.readLine(">").removeComment()
 
-      BasicParser.parse(PeekingIterator[Token](BasicLexer.tokens(input))) match
-        case Left(e) => error(e)
-        case Right(f: FunctionDefinitionNode) =>
-          println(registerFunction(f))
-        case Right(e: ExpressionNode) =>
-          evaluateExpression(e).foreach(println)
+      println(evaluator.evaluate(input))
 

@@ -33,3 +33,21 @@ object BasicParserContext extends BasicLanguageFamilyParserContext:
   override def parseExpression(tokens: PeekingIterator[Token]): Either[String, ExpressionNode] =
     BasicExpressionNodeParser.parse(tokens)(using this)
 
+object BasicReader extends IntegerValueReader
+
+class BasicEvaluator() extends Evaluator:
+  val functionDefinitionTable = FunctionDefinitionTable()
+  val environment = GlobalAndLocalScopeEnvironment()
+  val reader = BasicReader
+  override def evaluate(input: String): String =
+    BasicParser.parse(PeekingIterator[Token](BasicLexer.tokens(input)))(using BasicParserContext) match
+      case Left(e: String) => e
+      case Right(f: FunctionDefinitionNode) =>
+        functionDefinitionTable.register(f)
+        f.function
+      case Right(e: ExpressionNode) =>
+        e.evaluateExpression(using environment)(using functionDefinitionTable)(using reader) match
+          case Left(l) => l
+          case Right(r) => r.toString
+
+
