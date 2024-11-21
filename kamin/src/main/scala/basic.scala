@@ -36,9 +36,9 @@ object BasicParserContext extends BasicLanguageFamilyParserContext:
 object BasicReader extends IntegerValueReader
 
 class BasicEvaluator() extends Evaluator:
-  val functionDefinitionTable = FunctionDefinitionTable()
-  val environment = GlobalAndLocalScopeEnvironment()
-  val reader = BasicReader
+  val functionDefinitionTable: FunctionDefinitionTable = FunctionDefinitionTable()
+  val environment: Environment = GlobalAndLocalScopeEnvironment()
+  val reader: Reader = BasicReader
   override def evaluate(input: String): String =
     BasicParser.parse(PeekingIterator[Token](BasicLexer.tokens(input)))(using BasicParserContext) match
       case Left(e: String) => e

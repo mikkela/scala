@@ -19,12 +19,10 @@ object Dispatcher:
                                                                    tt2: TypeTest[Value, T2],
                                                                    operation: Op[T1, T2]
                                                                   ): Dispatcher[Op] =
-    new Dispatcher[Op]:
-      def dispatch(v1: Value, v2: Value): Option[Op[Value, Value]] =
-        for
-          t1 <- tt1.unapply(v1)
-          t2 <- tt2.unapply(v2)
-        yield operation.asInstanceOf[Op[Value, Value]]
+    (v1: Value, v2: Value) => for
+      t1 <- tt1.unapply(v1)
+      t2 <- tt2.unapply(v2)
+    yield operation.asInstanceOf[Op[Value, Value]]
 
 trait Arithmetic[T1 <: Value, T2 <: Value]:
   def addition(operand1: T1, operand2: T2): Value
