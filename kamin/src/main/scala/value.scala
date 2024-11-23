@@ -1,3 +1,5 @@
+package kamin
+
 import scala.util.{Failure, Success, Try}
 
 trait Value:
@@ -9,8 +11,10 @@ case class IntegerValue(value: Int) extends Value:
   override def toString: String = value.toString
 
 object IntegerValue:
-  val True: Value = IntegerValue(1)
-  val False: Value = IntegerValue(0)
+  val intTrue = 1
+  val intFalse = 0
+  val True: IntegerValue = IntegerValue(intTrue)
+  val False: IntegerValue = IntegerValue(intFalse)
 
 trait IntegerValueReader extends Reader:
   override def read(input: String): Either[String, Value] =

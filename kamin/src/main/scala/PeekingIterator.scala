@@ -1,3 +1,5 @@
+package kamin
+
 import scala.collection.mutable
 
 class PeekingIterator[A](iter: Iterator[A]) extends Iterator[A]:

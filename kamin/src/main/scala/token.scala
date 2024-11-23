@@ -1,3 +1,4 @@
+package kamin
 
 trait Token:
   def literal: String
@@ -38,4 +39,16 @@ object SetToken extends Token:
   override def literal: String = "set"
 object BeginToken extends Token:
   override def literal: String = "begin"
+object QuoteToken extends Token:
+  override def literal: String = "'"
 
+implicit class TokenExtensions(val t: Token):
+  def isToken(o: Token): Boolean = t == o
+
+  def isNameToken: Boolean = t match
+    case _: NameToken => true
+    case _ => false
+
+  def isIntegerValueToken: Boolean = t match
+    case _: IntegerValueToken => true
+    case _ => false

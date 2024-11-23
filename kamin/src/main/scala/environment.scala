@@ -1,3 +1,5 @@
+package kamin
+
 import scala.collection.mutable
 
 sealed trait Environment:

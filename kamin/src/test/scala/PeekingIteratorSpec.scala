@@ -1,3 +1,5 @@
+package kamin
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 

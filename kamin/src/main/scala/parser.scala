@@ -1,4 +1,7 @@
+package kamin
+
 import scala.util.Right
+import kamin.{LeftParenthesisToken, RightParenthesisToken, DefineToken}
 
 trait ParserContext
 
@@ -47,16 +50,6 @@ private def parseFixedNumberOfElements[ElementType <: Node](tokens: PeekingItera
         elementParser(tokens).map(elements :+ _)
       }
     }
-
-implicit class TokenExtensions(val t: Token) extends AnyVal {
-  def isToken(o: Token): Boolean = t == o
-  def isNameToken: Boolean = t match
-    case NameToken(_) => true
-    case _ => false
-  def isIntegerValueToken: Boolean = t match
-    case IntegerValueToken(_) => true
-    case _ => false
-}
 
 trait Parser[ResultType <: InputNode, ParserContextType <: ParserContext]:
   def parse(tokens: PeekingIterator[Token])(using context: ParserContextType): Either[String, ResultType] =
@@ -126,7 +119,7 @@ trait VariableExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageF
 
 trait IfExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyParserContext]:
   override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, ExpressionNode] =
-    checkTokensForPresence(tokens, _.isToken(LeftParenthesisToken), _.isToken(IfToken)) match
+    checkTokensForPresence(tokens, _.isToken(kamin.LeftParenthesisToken), _.isToken(IfToken)) match
       case Right(_) =>
         tokens.consumeTokens(2)
         parseFixedNumberOfElements(tokens, 3, context.parseExpression) match
@@ -142,7 +135,7 @@ trait IfExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyP
 
 trait WhileExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyParserContext]:
   override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, ExpressionNode] =
-    checkTokensForPresence(tokens, _.isToken(LeftParenthesisToken), _.isToken(WhileToken)) match
+    checkTokensForPresence(tokens, _.isToken(kamin.LeftParenthesisToken), _.isToken(WhileToken)) match
       case Right(_) =>
         tokens.consumeTokens(2)
         parseFixedNumberOfElements(tokens, 2, context.parseExpression) match

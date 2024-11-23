@@ -1,3 +1,6 @@
+package kamin
+
+import basic.BasicEvaluator
 import org.jline.reader.{LineReader, LineReaderBuilder}
 import org.jline.terminal.TerminalBuilder
 
@@ -23,7 +26,7 @@ implicit class StringExtensions(val s: String) extends AnyVal:
 def main(): Unit =
   val terminal = TerminalBuilder.terminal()
   val lineReader = LineReaderBuilder.builder().terminal(terminal).build()
-  val evaluator: Evaluator = BasicEvaluator()
+  var evaluator: Evaluator = BasicEvaluator()
 
   def error(e: String): Unit =
     println("Error: " + e)
@@ -32,10 +35,12 @@ def main(): Unit =
   while continue do
     var input = lineReader.readLine("->").removeComment()
 
-    if (input == "exit") continue = false
-    else
-      while !isBalanced(input) do
-        input = input + " " + lineReader.readLine(">").removeComment()
+    input match
+      case "exit" => continue = false
+      case "basic" => evaluator = BasicEvaluator()
+      case _ =>
+        while !isBalanced(input) do
+          input = input + " " + lineReader.readLine(">").removeComment()
 
-      println(evaluator.evaluate(input))
+        println(evaluator.evaluate(input))
 

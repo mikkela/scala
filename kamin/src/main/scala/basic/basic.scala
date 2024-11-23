@@ -1,3 +1,17 @@
+package kamin.basic
+
+import kamin.{AdditionExpressionNodeParser, AsteriskToken, BasicLanguageFamilyParserContext, BeginExpressionNodeParser,
+  BeginToken, DefineToken, DivisionExpressionNodeParser, Environment, EqualToken, EqualityExpressionNodeParser, Evaluator,
+  ExpressionNode, FunctionCallExpressionNodeParser, FunctionDefinitionNode, FunctionDefinitionNodeParser,
+  FunctionDefinitionTable, GlobalAndLocalScopeEnvironment, GreaterThanExpressionNodeParser, GreaterThanToken,
+  IfExpressionNodeParser, IfToken, IntegerValueExpressionNodeParser, IntegerValueReader, LeftParenthesisToken,
+  LessThanExpressionNodeParser, LessThanToken, Lexer, MinusToken, MultiplicationExpressionNodeParser, Parser,
+  PeekingIterator, PlusToken, PrintExpressionNodeParser, PrintToken, ReadExpressionNodeParser, ReadToken, Reader,
+  RightParenthesisToken, SetExpressionNodeParser, SetToken, SlashToken, SubtractionExpressionNodeParser, Token,
+  VariableExpressionNodeParser, WhileExpressionNodeParser, WhileToken}
+
+import kamin.given_ExpressionEvaluator_ExpressionNode
+
 object BasicLexer extends Lexer(
   Seq(LeftParenthesisToken, RightParenthesisToken),
   Seq(EqualToken, LessThanToken, GreaterThanToken, PlusToken, MinusToken, AsteriskToken, SlashToken, PrintToken,

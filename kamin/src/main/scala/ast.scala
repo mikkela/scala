@@ -1,3 +1,5 @@
+package kamin
+
 trait Node
 
 trait InputNode extends Node
@@ -5,7 +7,7 @@ trait InputNode extends Node
 case class FunctionDefinitionNode(function: String, arguments: Seq[String], expression: ExpressionNode)
   extends InputNode
 
-sealed trait ExpressionNode extends InputNode
+trait ExpressionNode extends InputNode
 
 case class IntegerValueExpressionNode(integerValue: Int) extends ExpressionNode
 
@@ -34,5 +36,3 @@ case class PrintExpressionNode(argument: ExpressionNode) extends ExpressionNode
 case class ReadExpressionNode() extends ExpressionNode
 
 case class FunctionCallExpressionNode(function: String, expressions: Seq[ExpressionNode]) extends ExpressionNode
-
-

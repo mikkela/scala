@@ -1,3 +1,5 @@
+package kamin
+
 import scala.annotation.tailrec
 import scala.io.StdIn
 import scala.reflect.TypeTest
@@ -12,6 +14,9 @@ trait ExpressionEvaluator[T <: ExpressionNode]:
 
 trait Dispatcher[Op[_ <: Value, _ <: Value]]:
   def dispatch(v1: Value, v2: Value): Option[Op[Value, Value]]
+  def orElse(other: Dispatcher[Op]): Dispatcher[Op] =
+    (v1: Value, v2: Value) =>
+      this.dispatch(v1, v2).orElse(other.dispatch(v1, v2))
 
 object Dispatcher:
   def create[T1 <: Value, T2 <: Value, Op[_ <: Value, _ <: Value]](using
@@ -25,15 +30,15 @@ object Dispatcher:
     yield operation.asInstanceOf[Op[Value, Value]]
 
 trait Arithmetic[T1 <: Value, T2 <: Value]:
-  def addition(operand1: T1, operand2: T2): Value
-  def subtraction(operand1: T1, operand2: T2): Value
-  def multiplication(operand1: T1, operand2: T2): Value
-  def division(operand1: T1, operand2: T2): Value
+  def addition(operand1: T1, operand2: T2): Either[String, Value]
+  def subtraction(operand1: T1, operand2: T2): Either[String, Value]
+  def multiplication(operand1: T1, operand2: T2): Either[String, Value]
+  def division(operand1: T1, operand2: T2): Either[String, Value]
 
 trait Relational[T1 <: Value, T2 <: Value]:
-  def equal(operand1: T1, operand2: T2): Boolean
-  def lessThan(operand1: T1, operand2: T2): Boolean
-  def greaterThan(operand1: T1, operand2: T2): Boolean
+  def equal(operand1: T1, operand2: T2): Either[String, Value]
+  def lessThan(operand1: T1, operand2: T2): Either[String, Value]
+  def greaterThan(operand1: T1, operand2: T2): Either[String, Value]
 
 trait Reader:
   def read(input: String): Either[String, Value] =
@@ -188,7 +193,7 @@ given ExpressionEvaluator[FunctionCallExpressionNode] with
 
 def add(v1: Value, v2: Value)(using dispatcher: ArithmeticDispatcher): Either[String, Value] =
   dispatcher.dispatch(v1, v2) match
-    case Some(arithmetic) => Right(arithmetic.addition(v1, v2))
+    case Some(arithmetic) => arithmetic.addition(v1, v2)
     case None =>
       Left(s"Addition is not supported for ${v1.getClass} and ${v2.getClass}")
 
@@ -203,7 +208,7 @@ given ExpressionEvaluator[AdditionExpressionNode] with
 
 def sub(v1: Value, v2: Value)(using dispatcher: ArithmeticDispatcher): Either[String, Value] =
   dispatcher.dispatch(v1, v2) match
-    case Some(arithmetic) => Right(arithmetic.subtraction(v1, v2))
+    case Some(arithmetic) => arithmetic.subtraction(v1, v2)
     case None =>
       Left(s"Subtraction is not supported for ${v1.getClass} and ${v2.getClass}")
 
@@ -218,7 +223,7 @@ given ExpressionEvaluator[SubtractionExpressionNode] with
 
 def mul(v1: Value, v2: Value)(using dispatcher: ArithmeticDispatcher): Either[String, Value] =
   dispatcher.dispatch(v1, v2) match
-    case Some(arithmetic) => Right(arithmetic.multiplication(v1, v2))
+    case Some(arithmetic) => arithmetic.multiplication(v1, v2)
     case None =>
       Left(s"Multiplication is not supported for ${v1.getClass} and ${v2.getClass}")
 
@@ -233,7 +238,7 @@ given ExpressionEvaluator[MultiplicationExpressionNode] with
 
 def div(v1: Value, v2: Value)(using dispatcher: ArithmeticDispatcher): Either[String, Value] =
   dispatcher.dispatch(v1, v2) match
-    case Some(arithmetic) => Right(arithmetic.division(v1, v2))
+    case Some(arithmetic) => arithmetic.division(v1, v2)
     case None =>
       Left(s"Division is not supported for ${v1.getClass} and ${v2.getClass}")
 
@@ -246,9 +251,9 @@ given ExpressionEvaluator[DivisionExpressionNode] with
       case Left(error) => Left(error)
       case Right(params) => div(params.head, params(1))
 
-def compare(v1: Value, v2: Value)(using dispatcher: RelationalDispatcher): Either[String, Boolean] =
+def compare(v1: Value, v2: Value)(using dispatcher: RelationalDispatcher): Either[String, Value] =
   dispatcher.dispatch(v1, v2) match
-    case Some(relational) => Right(relational.equal(v1, v2))
+    case Some(relational) => relational.equal(v1, v2)
     case None =>
       Left(s"Equal is not supported for ${v1.getClass} and ${v2.getClass}")
 
@@ -258,14 +263,11 @@ given ExpressionEvaluator[EqualityExpressionNode] with
                                                                        (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader) match
       case Left(error) => Left(error)
-      case Right(params) =>
-        compare(params.head, params(1)) match
-          case Left(e) => Left(e)
-          case Right(v: Boolean) => Right(if v then IntegerValue.True else IntegerValue.False)
+      case Right(params) => compare(params.head, params(1))
 
-def lessThan(v1: Value, v2: Value)(using dispatcher: RelationalDispatcher): Either[String, Boolean] =
+def lessThan(v1: Value, v2: Value)(using dispatcher: RelationalDispatcher): Either[String, Value] =
   dispatcher.dispatch(v1, v2) match
-    case Some(relational) => Right(relational.lessThan(v1, v2))
+    case Some(relational) => relational.lessThan(v1, v2)
     case None =>
       Left(s"Less than is not supported for ${v1.getClass} and ${v2.getClass}")
 
@@ -275,14 +277,11 @@ given ExpressionEvaluator[LessThanExpressionNode] with
                                                                        (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader) match
       case Left(error) => Left(error)
-      case Right(params) =>
-        lessThan(params.head, params(1)) match
-          case Left(e) => Left(e)
-          case Right(v: Boolean) => Right(if v then IntegerValue.True else IntegerValue.False)
+      case Right(params) => lessThan(params.head, params(1))
 
-def greaterThan(v1: Value, v2: Value)(using dispatcher: RelationalDispatcher): Either[String, Boolean] =
+def greaterThan(v1: Value, v2: Value)(using dispatcher: RelationalDispatcher): Either[String, Value] =
   dispatcher.dispatch(v1, v2) match
-    case Some(relational) => Right(relational.greaterThan(v1, v2))
+    case Some(relational) => relational.greaterThan(v1, v2)
     case None =>
       Left(s"Less than is not supported for ${v1.getClass} and ${v2.getClass}")
 
@@ -292,10 +291,7 @@ given ExpressionEvaluator[GreaterThanExpressionNode] with
                                                                           (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader) match
       case Left(error) => Left(error)
-      case Right(params) =>
-        greaterThan(params.head, params(1)) match
-          case Left(e) => Left(e)
-          case Right(v: Boolean) => Right(if v then IntegerValue.True else IntegerValue.False)
+      case Right(params) => greaterThan(params.head, params(1))
 
 given ExpressionEvaluator[PrintExpressionNode] with
   extension (t: PrintExpressionNode) override def evaluateExpression(using environment: Environment)
@@ -317,27 +313,27 @@ given ExpressionEvaluator[ReadExpressionNode] with
     reader.read(input)
 
 given Arithmetic[IntegerValue, IntegerValue] with
-  override def addition(operand1: IntegerValue, operand2: IntegerValue): Value =
-    IntegerValue(operand1.value + operand2.value)
+  override def addition(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(IntegerValue(operand1.value + operand2.value))
 
-  override def subtraction(operand1: IntegerValue, operand2: IntegerValue): Value =
-    IntegerValue(operand1.value - operand2.value)
+  override def subtraction(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(IntegerValue(operand1.value - operand2.value))
 
-  override def multiplication(operand1: IntegerValue, operand2: IntegerValue): Value =
-    IntegerValue(operand1.value * operand2.value)
+  override def multiplication(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(IntegerValue(operand1.value * operand2.value))
 
-  override def division(operand1: IntegerValue, operand2: IntegerValue): Value =
-    IntegerValue(operand1.value / operand2.value)
+  override def division(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(IntegerValue(operand1.value / operand2.value))
 
 given Relational[IntegerValue, IntegerValue] with
-  override def equal(operand1: IntegerValue, operand2: IntegerValue): Boolean =
-    operand1.value == operand2.value
+  override def equal(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(if operand1.value == operand2.value then IntegerValue.True else IntegerValue.False)
 
-  override def greaterThan(operand1: IntegerValue, operand2: IntegerValue): Boolean =
-    operand1.value > operand2.value
+  override def greaterThan(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(if operand1.value > operand2.value then IntegerValue.True else IntegerValue.False)
 
-  override def lessThan(operand1: IntegerValue, operand2: IntegerValue): Boolean =
-    operand1.value < operand2.value
+  override def lessThan(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(if operand1.value < operand2.value then IntegerValue.True else IntegerValue.False)
 
 given ArithmeticDispatcher =
   Dispatcher.create[IntegerValue, IntegerValue, Arithmetic]

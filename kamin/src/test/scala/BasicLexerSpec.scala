@@ -1,3 +1,6 @@
+package kamin
+
+import basic.BasicLexer
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks

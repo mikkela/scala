@@ -1,3 +1,5 @@
+package kamin
+
 class Lexer(separators: => Seq[Token], keywords: => Seq[Token]):
   def tokens(input: String):Iterator[Token] =
     var position = 0
