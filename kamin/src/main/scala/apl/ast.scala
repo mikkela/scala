@@ -2,6 +2,7 @@ package kamin.apl
 
 import kamin.ExpressionNode
 
+case class VectorValueExpressionNode(vectorValue: VectorValue) extends ExpressionNode
 case class MaximumExpressionNode(operand1: ExpressionNode, operand2: ExpressionNode) extends ExpressionNode
 case class OrExpressionNode(operand1: ExpressionNode, operand2: ExpressionNode) extends ExpressionNode
 case class AndExpressionNode(operand1: ExpressionNode, operand2: ExpressionNode) extends ExpressionNode

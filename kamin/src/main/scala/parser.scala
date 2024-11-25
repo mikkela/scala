@@ -1,17 +1,17 @@
 package kamin
 
-import scala.util.Right
-import kamin.{LeftParenthesisToken, RightParenthesisToken, DefineToken}
+import scala.util.{Failure, Right, Success, Try}
+import kamin.{DefineToken, LeftParenthesisToken, RightParenthesisToken}
 
 trait ParserContext
 
 trait BasicLanguageFamilyParserContext extends ParserContext:
   def parseExpression(tokens: PeekingIterator[Token]): Either[String, ExpressionNode]
-
-private def invalidToken(token: Token): Left[String, Nothing] =
+  
+def invalidToken(token: Token): Left[String, Nothing] =
   Left(s"${token.literal} is an unexpected token")
 
-private def invalidEndOfProgram: Either[String, Nothing] =
+def invalidEndOfProgram: Either[String, Nothing] =
   Left("Invalid end of program")
 
 private def invalidArity(expectedOperator: String, expectedArity: Int): Left[String, Nothing] =
@@ -20,7 +20,7 @@ private def invalidArity(expectedOperator: String, expectedArity: Int): Left[Str
 private def unexpectedError: Either[String, Nothing] =
   Left("Unexpected error")
 
-private def checkTokensForPresence(tokens: PeekingIterator[Token], expected: (Token=>Boolean)*): Either[String, Seq[Token]] =
+def checkTokensForPresence(tokens: PeekingIterator[Token], expected: (Token=>Boolean)*): Either[String, Seq[Token]] =
   val peeks = tokens.peek(expected.length)
   if peeks.length < expected.length then
     return invalidEndOfProgram
@@ -31,7 +31,14 @@ private def checkTokensForPresence(tokens: PeekingIterator[Token], expected: (To
     case (left, _) => left // Early termination if error found
   }
 
-private def parseListOfElements[ElementType](tokens: PeekingIterator[Token], elementParser: PeekingIterator[Token] => Either[String, ElementType]): Either[String, Seq[ElementType]] =
+def parseInteger(tokens: PeekingIterator[Token]): Either[String, Int] =
+  checkTokensForPresence(tokens, _.isIntegerValueToken) match
+    case Right(Seq(value)) =>
+      tokens.consumeTokens(1)
+      Right(value.literal.toInt)
+    case Left(msg) => Left(msg) 
+    
+def parseListOfElements[ElementType](tokens: PeekingIterator[Token], elementParser: PeekingIterator[Token] => Either[String, ElementType]): Either[String, Seq[ElementType]] =
   var list = List.empty[ElementType]
   var peek = tokens.peek(1)
   while (peek.nonEmpty && !peek.head.isToken(RightParenthesisToken))
@@ -102,10 +109,9 @@ trait FunctionDefinitionNodeParser extends Parser[FunctionDefinitionNode, BasicL
 
 trait IntegerValueExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyParserContext]:
   override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, ExpressionNode] =
-    checkTokensForPresence(tokens, _.isIntegerValueToken) match
-      case Right(Seq(value)) =>
-        tokens.consumeTokens(1)
-        Right(IntegerValueExpressionNode(value.literal.toInt))
+    parseInteger(tokens) match
+      case Right(value) =>
+        Right(IntegerValueExpressionNode(value))
       case _ => super.parse(tokens)
 
 

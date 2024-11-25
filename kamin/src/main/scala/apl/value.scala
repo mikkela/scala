@@ -11,11 +11,11 @@ case class VectorValue private(value: Vector[Int]) extends Value:
 
 
 object VectorValue:
-  def createVector(value: Vector[Int]): Either[String, VectorValue] =
-    if (value.isEmpty)
+  def createVector(values: Seq[Int]): Either[String, VectorValue] =
+    if (values.isEmpty)
       Left("Unable to create an empty Vector")
     else
-      Right(VectorValue(value))
+      Right(VectorValue(values.toVector))
 
   def emptyVector: VectorValue = VectorValue(Vector.empty)
 
