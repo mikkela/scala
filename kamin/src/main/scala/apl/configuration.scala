@@ -12,4 +12,8 @@ object RegistriesSetup:
     kamin.ArithmeticRegistry.register(classOf[IntegerValue], classOf[VectorValue], IntegerVectorArithmetic)
     kamin.ArithmeticRegistry.register(classOf[VectorValue], classOf[VectorValue], VectorVectorArithmetic)
 
+    kamin.RelationalRegistry.register(classOf[VectorValue], classOf[IntegerValue], VectorIntegerRelational)
+    kamin.RelationalRegistry.register(classOf[IntegerValue], classOf[VectorValue], IntegerVectorRelational)
+    kamin.RelationalRegistry.register(classOf[VectorValue], classOf[VectorValue], VectorVectorRelational)
+
 

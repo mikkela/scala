@@ -366,10 +366,10 @@ object VectorIntegerRelational extends Relational[VectorValue, IntegerValue]:
     Right(VectorValue.createVector(operand1.value.map(e => toInteger(e == operand2.value))))
 
   override def greaterThan(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
-    Right(VectorValue.createVector(operand1.value.map(e => toInteger(operand2.value > e))))
+    Right(VectorValue.createVector(operand1.value.map(e => toInteger(e > operand2.value))))
 
   override def lessThan(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
-    Right(VectorValue.createVector(operand1.value.map(e => toInteger(operand2.value < e))))
+    Right(VectorValue.createVector(operand1.value.map(e => toInteger(e < operand2.value))))
 
 object IntegerVectorArithmetic extends Arithmetic[IntegerValue, VectorValue]:
   override def addition(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =

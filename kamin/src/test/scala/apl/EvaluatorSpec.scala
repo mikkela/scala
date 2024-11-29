@@ -1,10 +1,14 @@
 package kamin.apl
 
 import kamin.{AdditionExpressionNode, SubtractionExpressionNode, MultiplicationExpressionNode, DivisionExpressionNode, Arithmetic, FunctionDefinitionTable, GlobalAndLocalScopeEnvironment, IntegerValue, IntegerValueExpressionNode, Reader}
+import kamin.{EqualityExpressionNode, LessThanExpressionNode, GreaterThanExpressionNode}
 import kamin.given_ExpressionEvaluator_AdditionExpressionNode
 import kamin.given_ExpressionEvaluator_SubtractionExpressionNode
 import kamin.given_ExpressionEvaluator_MultiplicationExpressionNode
 import kamin.given_ExpressionEvaluator_DivisionExpressionNode
+import kamin.given_ExpressionEvaluator_EqualityExpressionNode
+import kamin.given_ExpressionEvaluator_LessThanExpressionNode
+import kamin.given_ExpressionEvaluator_GreaterThanExpressionNode
 import kamin.{IntegerValue}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
@@ -242,6 +246,158 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     }
   }
 
+  describe("evaluateExpression for EqualityExpressionNode for IntegerValue and VectorValue") {
+    it("should return the result of comparing of the operands when called") {
+      val sut = EqualityExpressionNode(IntegerValueExpressionNode(10), VectorValueExpressionNode(VectorValue.createVector(Vector(20, 10, 40))))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.createVector(Vector(0, 1, 0)))
+    }
+
+    it("should return empty vector if empty vector is used") {
+      val sut = EqualityExpressionNode(IntegerValueExpressionNode(10), VectorValueExpressionNode(VectorValue.emptyVector))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.emptyVector)
+    }
+  }
+
+  describe("evaluateExpression for EqualityExpressionNode for VectorValue and IntegerValue") {
+    it("should return the result of comparing of the operands when called") {
+      val sut = EqualityExpressionNode(VectorValueExpressionNode(VectorValue.createVector(Vector(10, 32, 10))), IntegerValueExpressionNode(10))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.createVector(Vector(1, 0, 1)))
+    }
+
+    it("should return empty vector if empty vector is used") {
+      val sut = EqualityExpressionNode(VectorValueExpressionNode(VectorValue.emptyVector), IntegerValueExpressionNode(10))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.emptyVector)
+    }
+  }
+
+  describe("evaluateExpression for EqualityExpressionNode for VectorValue and VectorValue") {
+    it("should return the result of comparing of the operands when called") {
+      val v1 = VectorValue.createVector(Vector(25, 32, 41))
+      val v2 = VectorValue.createVector(Vector(25, 32, 15))
+      val sut = EqualityExpressionNode(VectorValueExpressionNode(v1), VectorValueExpressionNode(v2))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.createVector(Vector(1, 1, 0)))
+    }
+
+    it("should return empty vector if both empty vectors") {
+      val sut = EqualityExpressionNode(VectorValueExpressionNode(VectorValue.emptyVector), VectorValueExpressionNode(VectorValue.emptyVector))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.emptyVector)
+    }
+
+    it("should return an error if different shapes") {
+      val v1 = VectorValue.createVector(Vector(25, 32, 41, 67))
+      val v2 = VectorValue.createVector(Vector(37, 12, 15))
+      val sut = EqualityExpressionNode(VectorValueExpressionNode(v1), VectorValueExpressionNode(v2))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Left("The two operands are not of same shape")
+    }
+
+    it("should return an error if one empty vectors") {
+      val v = VectorValue.createVector(Vector(25, 32, 41))
+      val sut = EqualityExpressionNode(VectorValueExpressionNode(VectorValue.emptyVector), VectorValueExpressionNode(v))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Left("The two operands are not of same shape")
+    }
+  }
+
+  describe("evaluateExpression for LessThanExpressionNode for IntegerValue and VectorValue") {
+    it("should return the result of comparing of the operands when called") {
+      val sut = LessThanExpressionNode(IntegerValueExpressionNode(10), VectorValueExpressionNode(VectorValue.createVector(Vector(-20, 10, 40))))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.createVector(Vector(0, 0, 1)))
+    }
+
+    it("should return empty vector if empty vector is used") {
+      val sut = LessThanExpressionNode(IntegerValueExpressionNode(10), VectorValueExpressionNode(VectorValue.emptyVector))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.emptyVector)
+    }
+  }
+
+  describe("evaluateExpression for LessThanExpressionNode for VectorValue and IntegerValue") {
+    it("should return the result of comparing of the operands when called") {
+      val sut = LessThanExpressionNode(VectorValueExpressionNode(VectorValue.createVector(Vector(10, -32, 50))), IntegerValueExpressionNode(10))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.createVector(Vector(0, 1, 0)))
+    }
+
+    it("should return empty vector if empty vector is used") {
+      val sut = LessThanExpressionNode(VectorValueExpressionNode(VectorValue.emptyVector), IntegerValueExpressionNode(10))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.emptyVector)
+    }
+  }
+
+  describe("evaluateExpression for LessThanExpressionNode for VectorValue and VectorValue") {
+    it("should return the result of comparing of the operands when called") {
+      val v1 = VectorValue.createVector(Vector(12, 32, 41))
+      val v2 = VectorValue.createVector(Vector(25, 32, 15))
+      val sut = LessThanExpressionNode(VectorValueExpressionNode(v1), VectorValueExpressionNode(v2))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.createVector(Vector(1, 0, 0)))
+    }
+
+    it("should return empty vector if both empty vectors") {
+      val sut = LessThanExpressionNode(VectorValueExpressionNode(VectorValue.emptyVector), VectorValueExpressionNode(VectorValue.emptyVector))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.emptyVector)
+    }
+
+    it("should return an error if different shapes") {
+      val v1 = VectorValue.createVector(Vector(25, 32, 41, 67))
+      val v2 = VectorValue.createVector(Vector(37, 12, 15))
+      val sut = LessThanExpressionNode(VectorValueExpressionNode(v1), VectorValueExpressionNode(v2))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Left("The two operands are not of same shape")
+    }
+
+    it("should return an error if one empty vectors") {
+      val v = VectorValue.createVector(Vector(25, 32, 41))
+      val sut = LessThanExpressionNode(VectorValueExpressionNode(VectorValue.emptyVector), VectorValueExpressionNode(v))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Left("The two operands are not of same shape")
+    }
+  }
+
+  describe("evaluateExpression for GreaterThanExpressionNode for IntegerValue and VectorValue") {
+    it("should return the result of comparing of the operands when called") {
+      val sut = GreaterThanExpressionNode(IntegerValueExpressionNode(10), VectorValueExpressionNode(VectorValue.createVector(Vector(-20, 10, 40))))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.createVector(Vector(1, 0, 0)))
+    }
+
+    it("should return empty vector if empty vector is used") {
+      val sut = GreaterThanExpressionNode(IntegerValueExpressionNode(10), VectorValueExpressionNode(VectorValue.emptyVector))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.emptyVector)
+    }
+  }
+
+  describe("evaluateExpression for GreaterThanExpressionNode for VectorValue and IntegerValue") {
+    it("should return the result of comparing of the operands when called") {
+      val sut = GreaterThanExpressionNode(VectorValueExpressionNode(VectorValue.createVector(Vector(10, -32, 50))), IntegerValueExpressionNode(10))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.createVector(Vector(0, 0, 1)))
+    }
+
+    it("should return empty vector if empty vector is used") {
+      val sut = GreaterThanExpressionNode(VectorValueExpressionNode(VectorValue.emptyVector), IntegerValueExpressionNode(10))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.emptyVector)
+    }
+  }
+
+  describe("evaluateExpression for GreaterThanExpressionNode for VectorValue and VectorValue") {
+    it("should return the result of comparing of the operands when called") {
+      val v1 = VectorValue.createVector(Vector(12, 32, 41))
+      val v2 = VectorValue.createVector(Vector(25, 32, 15))
+      val sut = GreaterThanExpressionNode(VectorValueExpressionNode(v1), VectorValueExpressionNode(v2))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.createVector(Vector(0, 0, 1)))
+    }
+
+    it("should return empty vector if both empty vectors") {
+      val sut = GreaterThanExpressionNode(VectorValueExpressionNode(VectorValue.emptyVector), VectorValueExpressionNode(VectorValue.emptyVector))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Right(VectorValue.emptyVector)
+    }
+
+    it("should return an error if different shapes") {
+      val v1 = VectorValue.createVector(Vector(25, 32, 41, 67))
+      val v2 = VectorValue.createVector(Vector(37, 12, 15))
+      val sut = GreaterThanExpressionNode(VectorValueExpressionNode(v1), VectorValueExpressionNode(v2))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Left("The two operands are not of same shape")
+    }
+
+    it("should return an error if one empty vectors") {
+      val v = VectorValue.createVector(Vector(25, 32, 41))
+      val sut = GreaterThanExpressionNode(VectorValueExpressionNode(VectorValue.emptyVector), VectorValueExpressionNode(v))
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Left("The two operands are not of same shape")
+    }
+  }
   /*
 
   describe("evaluateExpression for MultiplicationExpressionNode") {
