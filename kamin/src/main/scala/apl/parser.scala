@@ -16,12 +16,7 @@ trait VectorValueExpressionNodeParser extends Parser[ExpressionNode, BasicLangua
               case Left(value) => Left(value)
               case Right(_) =>
                 tokens.consumeTokens(1)
-                if (integers.isEmpty)
-                  Right(VectorValueExpressionNode(VectorValue.emptyVector))
-                else
-                  VectorValue.createVector(integers) match
-                    case Left(value) => Left(value)
-                    case Right(vectorValue) => Right(VectorValueExpressionNode(vectorValue))
+                Right(VectorValueExpressionNode(VectorValue.createVector(integers)))
           case Right(_) =>
             tokens.peek(1) match
               case List(token) => invalidToken(token)

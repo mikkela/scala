@@ -1,21 +1,20 @@
 package kamin.apl
 
-import kamin.{Reader, Value}
+import kamin.{IntegerValue, Reader, Value}
+import kamin.apl.ValueExtensions.shape
 
-import scala.annotation.targetName
 import scala.util.{Failure, Success, Try}
 
 case class VectorValue private(value: Vector[Int]) extends Value:
   override def isTrue: Boolean = this != VectorValue.emptyVector
   override def toString: String = value.mkString(" ") + "\n"
 
-
 object VectorValue:
-  def createVector(values: Seq[Int]): Either[String, VectorValue] =
+  def createVector(values: Seq[Int]): VectorValue =
     if (values.isEmpty)
-      Left("Unable to create an empty Vector")
+      emptyVector
     else
-      Right(VectorValue(values.toVector))
+      VectorValue(values.toVector)
 
   def emptyVector: VectorValue = VectorValue(Vector.empty)
 
@@ -34,7 +33,7 @@ trait VectorValueReader extends Reader:
     if input.startsWith("'") && input.drop(1).trim.startsWith("(") && input.endsWith(")") then
       val content = input.drop(1).trim.drop(1).dropRight(1) // Remove `'` and parentheses
       Try(content.split("\\s+").map(_.toInt).toVector) match
-        case Success(value) => VectorValue.createVector(value)
+        case Success(value) => Right(VectorValue.createVector(value))
         case Failure(_) => super.read(input)
     else
       super.read(input)

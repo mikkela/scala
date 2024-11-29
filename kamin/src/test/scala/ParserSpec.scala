@@ -8,6 +8,7 @@ import org.scalatestplus.mockito.MockitoSugar
 class ParserSpec extends AnyFunSpec
   with Matchers
   with MockitoSugar {
+  
   describe("A Parser") {
     it("should return an error when presented with an empty token stream") {
       val sut = new Parser[InputNode, ParserContext] {}

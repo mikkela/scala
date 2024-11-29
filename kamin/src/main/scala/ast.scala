@@ -9,7 +9,7 @@ case class FunctionDefinitionNode(function: String, arguments: Seq[String], expr
 
 trait ExpressionNode extends InputNode
 
-case class IntegerValueExpressionNode(integerValue: Int) extends ExpressionNode
+case class IntegerValueExpressionNode(integerValue: IntegerValue) extends ExpressionNode
 
 case class VariableExpressionNode(variableExpression: String) extends ExpressionNode
 

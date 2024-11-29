@@ -111,7 +111,7 @@ trait IntegerValueExpressionNodeParser extends Parser[ExpressionNode, BasicLangu
   override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, ExpressionNode] =
     parseInteger(tokens) match
       case Right(value) =>
-        Right(IntegerValueExpressionNode(value))
+        Right(IntegerValueExpressionNode(IntegerValue(value)))
       case _ => super.parse(tokens)
 
 

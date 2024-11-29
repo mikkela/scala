@@ -1,9 +1,14 @@
 package kamin.apl
 
-import kamin.{Arithmetic, ArithmeticDispatcher, Dispatcher, Environment, ExpressionEvaluator, FunctionDefinitionTable, IntegerValue, Reader, Relational, RelationalDispatcher, Value, evaluateParameters, given_Arithmetic_IntegerValue_IntegerValue, given_Relational_IntegerValue_IntegerValue}
+import kamin.{Arithmetic, Environment, ExpressionEvaluator, FunctionDefinitionTable, IntegerValue, Reader, Relational, Value, evaluateParameters}
+import kamin.apl.ValueExtensions.shape
+import kamin.apl.VectorValue.createVector
 
-private def differentShapes =
-  Left("The two arguments have different shape")
+private def cannotDivideWithZero = Left("Cannot divide with zero")
+private def notOfSameShape = Left("The two operands are not of same shape")
+
+private def containsZero(v: VectorValue): Boolean =
+  v.value.exists(_ == 0)
 
 private def hasSameShape(v1: Vector[Vector[Int]], v2: Vector[Vector[Int]]): Boolean =
   v1.length == v2.length &&
@@ -31,7 +36,13 @@ def evaluateBinaryOperation[T <: Value](
         }
       }
     ))
-  case _ => differentShapes
+  case _ => notOfSameShape
+
+given ExpressionEvaluator[VectorValueExpressionNode] with
+  extension (t: VectorValueExpressionNode) override def evaluateExpression(using environment: Environment)
+                                                                           (using functionDefinitionTable: FunctionDefinitionTable)
+                                                                           (using reader: Reader): Either[String, Value] =
+    Right(t.vectorValue)
 
 
 given ExpressionEvaluator[MaximumExpressionNode] with
@@ -334,7 +345,106 @@ given Relational[IntegerValue, MatrixValue] with
       e => toInteger(operand1.value < e)))))
 
 
-given Arithmetic[MatrixValue, IntegerValue] with
+object VectorIntegerArithmetic extends Arithmetic[VectorValue, IntegerValue]:
+  override def addition(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand1.value.map(v => v + operand2.value)))
+
+  override def subtraction(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand1.value.map(v => v - operand2.value)))
+
+  override def multiplication(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand1.value.map(v => v * operand2.value)))
+
+  override def division(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
+    if (operand2 == IntegerValue.Zero)
+      cannotDivideWithZero
+    else
+      Right(VectorValue.createVector(operand1.value.map(v => v / operand2.value)))
+
+object VectorIntegerRelational extends Relational[VectorValue, IntegerValue]:
+  override def equal(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand1.value.map(e => toInteger(e == operand2.value))))
+
+  override def greaterThan(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand1.value.map(e => toInteger(operand2.value > e))))
+
+  override def lessThan(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand1.value.map(e => toInteger(operand2.value < e))))
+
+object IntegerVectorArithmetic extends Arithmetic[IntegerValue, VectorValue]:
+  override def addition(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand2.value.map(v => operand1.value + v)))
+
+  override def subtraction(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand2.value.map(v => operand1.value - v)))
+
+  override def multiplication(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand2.value.map(v => operand1.value * v)))
+
+  override def division(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =
+    if (containsZero(operand2))
+      cannotDivideWithZero
+    else
+      Right(VectorValue.createVector(operand2.value.map(v => operand1.value / v)))
+
+object IntegerVectorRelational extends Relational[IntegerValue, VectorValue]:
+  override def equal(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand2.value.map(e => toInteger(e == operand1.value))))
+
+  override def greaterThan(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand2.value.map(e => toInteger(operand1.value > e))))
+
+  override def lessThan(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =
+    Right(VectorValue.createVector(operand2.value.map(e => toInteger(operand1.value < e))))
+
+
+object VectorVectorArithmetic extends Arithmetic[VectorValue, VectorValue]:
+  override def addition(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
+    if operand1.shape == operand2.shape then
+      Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1+v2)))
+    else
+      notOfSameShape
+
+  override def subtraction(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
+    if operand1.shape == operand2.shape then
+      Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1 - v2)))
+    else
+      notOfSameShape
+
+  override def multiplication(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
+    if operand1.shape == operand2.shape then
+      Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1 * v2)))
+    else
+      notOfSameShape
+
+  override def division(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
+    if operand1.shape == operand2.shape then
+      if (containsZero(operand2))
+        cannotDivideWithZero
+      else
+        Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1 / v2)))
+    else
+      notOfSameShape
+
+object VectorVectorRelational extends Relational[VectorValue, VectorValue]:
+  override def equal(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
+    if operand1.shape == operand2.shape then
+      Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 == v2) }))
+    else
+      notOfSameShape
+
+  override def greaterThan(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
+    if operand1.shape == operand2.shape then
+      Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 > v2) }))
+    else
+      notOfSameShape
+
+  override def lessThan(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
+    if operand1.shape == operand2.shape then
+      Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 < v2) }))
+    else
+      notOfSameShape
+/*given Arithmetic[MatrixValue, IntegerValue] with
   override def addition(operand1: MatrixValue, operand2: IntegerValue): Either[String, Value] =
     Right(MatrixValue(operand1.value.map( row => row.map(_ + operand2.value))))
 
@@ -445,16 +555,4 @@ given Relational[MatrixValue, MatrixValue] with
       )
     else
       differentShapes
-
-
-given ArithmeticDispatcher =
-  Dispatcher.create[IntegerValue, IntegerValue, Arithmetic]
-    .orElse(Dispatcher.create[IntegerValue, MatrixValue, Arithmetic])
-    .orElse(Dispatcher.create[MatrixValue, IntegerValue, Arithmetic])
-    .orElse(Dispatcher.create[MatrixValue, MatrixValue, Arithmetic])
-
-given RelationalDispatcher =
-  Dispatcher.create[IntegerValue, IntegerValue, Relational]
-    .orElse(Dispatcher.create[IntegerValue, MatrixValue, Relational])
-    .orElse(Dispatcher.create[MatrixValue, IntegerValue, Relational])
-    .orElse(Dispatcher.create[MatrixValue, MatrixValue, Relational])
+*/

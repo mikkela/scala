@@ -1,5 +1,6 @@
 package kamin
 
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -8,7 +9,11 @@ import org.scalatestplus.mockito.MockitoSugar
 class ExpressionEvaluatorSpec extends AnyFunSpec
   with Matchers
   with MockitoSugar
+  with BeforeAndAfterAll
   with TableDrivenPropertyChecks {
+
+  override def beforeAll(): Unit =
+    RegistriesSetup.initialize()
 
   describe("evaluateExpression for IntegerValueNode") {
     it("should return the integer value even without an environment") {

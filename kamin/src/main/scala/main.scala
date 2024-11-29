@@ -28,6 +28,8 @@ def main(): Unit =
   val lineReader = LineReaderBuilder.builder().terminal(terminal).build()
   var evaluator: Evaluator = BasicEvaluator()
 
+  RegistriesSetup.initialize()
+
   def error(e: String): Unit =
     println("Error: " + e)
 

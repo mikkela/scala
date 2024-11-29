@@ -20,7 +20,7 @@ class ParserSpec extends AnyFunSpec
       val sut = new VectorValueExpressionNodeParser {}
 
       sut.parse(peekingIterator)(using context = null) shouldBe Right(
-        VectorValueExpressionNode(VectorValue.createVector(Vector(1, 2, 3)).getOrElse(VectorValue.emptyVector))
+        VectorValueExpressionNode(VectorValue.createVector(Vector(1, 2, 3)))
       )
     }
 

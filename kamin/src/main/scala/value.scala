@@ -15,6 +15,8 @@ object IntegerValue:
   val intFalse = 0
   val True: IntegerValue = IntegerValue(intTrue)
   val False: IntegerValue = IntegerValue(intFalse)
+  val Zero: IntegerValue = IntegerValue(0)
+  implicit def intToIntegerValue(i: Int): IntegerValue = IntegerValue(i)
 
 trait IntegerValueReader extends Reader:
   override def read(input: String): Either[String, Value] =
