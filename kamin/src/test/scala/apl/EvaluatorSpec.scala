@@ -9,6 +9,9 @@ import kamin.given_ExpressionEvaluator_DivisionExpressionNode
 import kamin.given_ExpressionEvaluator_EqualityExpressionNode
 import kamin.given_ExpressionEvaluator_LessThanExpressionNode
 import kamin.given_ExpressionEvaluator_GreaterThanExpressionNode
+import kamin.apl.given_ExpressionEvaluator_MaximumExpressionNode
+import kamin.apl.given_ExpressionEvaluator_AndExpressionNode
+import kamin.apl.given_ExpressionEvaluator_OrExpressionNode
 import kamin.{IntegerValue}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
@@ -396,6 +399,127 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val v = VectorValue.createVector(Vector(25, 32, 41))
       val sut = GreaterThanExpressionNode(VectorValueExpressionNode(VectorValue.emptyVector), VectorValueExpressionNode(v))
       sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldBe Left("The two operands are not of same shape")
+    }
+  }
+
+  describe("ExpressionEvaluator for MaximumExpressionNode") {
+
+    it("should return the maximum of two integer values") {
+      val sut = MaximumExpressionNode(
+        IntegerValueExpressionNode(IntegerValue(3)), 
+        IntegerValueExpressionNode(IntegerValue(5)))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(IntegerValue(5))
+    }
+
+    it("should return the maximum of an integer and a vector") {
+      val sut = MaximumExpressionNode(
+        IntegerValueExpressionNode(IntegerValue(3)), 
+        VectorValueExpressionNode(VectorValue.createVector(Seq(2, 4, 6))))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(VectorValue.createVector(Seq(3, 4, 6)))
+    }
+
+    it("should handle vectors of the same shape") {
+      val sut = MaximumExpressionNode(
+        VectorValueExpressionNode(VectorValue.createVector(Seq(1, 5, 3))), 
+        VectorValueExpressionNode(VectorValue.createVector(Seq(4, 2, 6))))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(VectorValue.createVector(Seq(4, 5, 6)))
+    }
+
+    it("should handle invalid shapes for vectors") {
+      val sut = MaximumExpressionNode(
+        VectorValueExpressionNode(VectorValue.createVector(Seq(1, 2))), 
+        VectorValueExpressionNode(VectorValue.createVector(Seq(1, 2, 3))))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Left("The two operands are not of same shape")
+    }
+  }
+
+  describe("ExpressionEvaluator for AndExpressionNode") {
+
+    it("should return true if two integer values are non-zero") {
+      val sut = AndExpressionNode(
+        IntegerValueExpressionNode(IntegerValue(3)),
+        IntegerValueExpressionNode(IntegerValue(5)))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(IntegerValue.True)
+    }
+
+    it("should return true if one integer values is zero") {
+      val sut = AndExpressionNode(
+        IntegerValueExpressionNode(IntegerValue(3)),
+        IntegerValueExpressionNode(IntegerValue(0)))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(IntegerValue.False)
+    }
+
+    it("should return the and of an integer and a vector") {
+      val sut = AndExpressionNode(
+        IntegerValueExpressionNode(IntegerValue(3)),
+        VectorValueExpressionNode(VectorValue.createVector(Seq(2, 4, 0))))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(VectorValue.createVector(Seq(1, 1, 0)))
+    }
+
+    it("should handle vectors of the same shape") {
+      val sut = AndExpressionNode(
+        VectorValueExpressionNode(VectorValue.createVector(Seq(0, 5, 3))),
+        VectorValueExpressionNode(VectorValue.createVector(Seq(4, 0, 6))))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(VectorValue.createVector(Seq(0, 0, 1)))
+    }
+
+    it("should handle invalid shapes for vectors") {
+      val sut = AndExpressionNode(
+        VectorValueExpressionNode(VectorValue.createVector(Seq(1, 2))),
+        VectorValueExpressionNode(VectorValue.createVector(Seq(1, 2, 3))))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Left("The two operands are not of same shape")
+    }
+  }
+
+  describe("ExpressionEvaluator for OrExpressionNode") {
+
+    it("should return true if one integer value is non-zero") {
+      val sut = OrExpressionNode(
+        IntegerValueExpressionNode(IntegerValue(3)),
+        IntegerValueExpressionNode(IntegerValue(0)))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(IntegerValue.True)
+    }
+
+    it("should return true if both integer values are zero") {
+      val sut = OrExpressionNode(
+        IntegerValueExpressionNode(IntegerValue(0)),
+        IntegerValueExpressionNode(IntegerValue(0)))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(IntegerValue.False)
+    }
+
+    it("should return the and of an integer and a vector") {
+      val sut = OrExpressionNode(
+        IntegerValueExpressionNode(IntegerValue(3)),
+        VectorValueExpressionNode(VectorValue.createVector(Seq(2, 4, 0))))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(VectorValue.createVector(Seq(1, 1, 1)))
+    }
+
+    it("should handle vectors of the same shape") {
+      val sut = OrExpressionNode(
+        VectorValueExpressionNode(VectorValue.createVector(Seq(0, 5, 0))),
+        VectorValueExpressionNode(VectorValue.createVector(Seq(4, 0, 0))))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Right(VectorValue.createVector(Seq(1, 1, 0)))
+    }
+
+    it("should handle invalid shapes for vectors") {
+      val sut = OrExpressionNode(
+        VectorValueExpressionNode(VectorValue.createVector(Seq(1, 2))),
+        VectorValueExpressionNode(VectorValue.createVector(Seq(1, 2, 3))))
+
+      sut.evaluateExpression(using GlobalAndLocalScopeEnvironment())(using FunctionDefinitionTable())(using new Reader {}) shouldEqual Left("The two operands are not of same shape")
     }
   }
   /*

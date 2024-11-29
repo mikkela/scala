@@ -24,7 +24,15 @@ def evaluateBinaryOperation[T <: Value](
                                        ): Either[String, Value] = (operand1, operand2) match
   case (IntegerValue(v1), IntegerValue(v2)) =>
     Right(IntegerValue(op(v1, v2)))
-  case (IntegerValue(v1), MatrixValue(m2)) =>
+  case (IntegerValue(v1), VectorValue(v2)) =>
+    Right(VectorValue.createVector(v2.map(op(v1, _))))
+  case (VectorValue(v1), IntegerValue(v2)) =>
+    Right(VectorValue.createVector(v1.map(op(_, v2))))
+  case (vector1: VectorValue, vector2: VectorValue) if vector1.shape == vector2.shape  =>
+    Right(VectorValue.createVector(
+      vector1.value.zip(vector2.value).map { case (v1, v2) => op(v1, v2)}
+    ))
+  /*case (IntegerValue(v1), MatrixValue(m2)) =>
     Right(MatrixValue(m2.map(_.map(op(v1, _)))))
   case (MatrixValue(m1), IntegerValue(v2)) =>
     Right(MatrixValue(m1.map(_.map(op(_, v2)))))
@@ -35,7 +43,7 @@ def evaluateBinaryOperation[T <: Value](
           op(v1, v2)
         }
       }
-    ))
+    ))*/
   case _ => notOfSameShape
 
 given ExpressionEvaluator[VectorValueExpressionNode] with
