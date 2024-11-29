@@ -8,7 +8,7 @@ private def cannotDivideWithZero = Left("Cannot divide with zero")
 private def notOfSameShape = Left("The two operands are not of same shape")
 
 private def containsZero(v: VectorValue): Boolean =
-  v.value.exists(_ == 0)
+  v.value.contains(0)
 
 private def hasSameShape(v1: Vector[Vector[Int]], v2: Vector[Vector[Int]]): Boolean =
   v1.length == v2.length &&
@@ -83,7 +83,7 @@ given ExpressionEvaluator[OrExpressionNode] with
       case _ => Left("Invalid parameters")
     }
 
-private def isNullMatrix(m: MatrixValue) = m.value.length == 0
+private def isNullMatrix(m: MatrixValue) = m.value.isEmpty
 private def nullMatrix = MatrixValue(Vector.empty)
 private def isVector(m: MatrixValue) = m.value.length == 1
 
@@ -118,8 +118,8 @@ given ExpressionEvaluator[MultiplicationReductionExpressionNode] with
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
       case List(operand: IntegerValue) => Right(operand)
       case List(operand: MatrixValue) if isNullMatrix(operand) => Right(operand)
-      case List(operand: MatrixValue) if isVector(operand) => Right(IntegerValue(operand.value.head.reduce(_ * _)))
-      case List(operand: MatrixValue) => Right(MatrixValue(operand.value.map(row => Vector(row.reduce(_ * _)))))
+      case List(operand: MatrixValue) if isVector(operand) => Right(IntegerValue(operand.value.head.product))
+      case List(operand: MatrixValue) => Right(MatrixValue(operand.value.map(row => Vector(row.product))))
       case _ => Left("Invalid parameters")
     }
 
@@ -155,9 +155,9 @@ given ExpressionEvaluator[AndReductionExpressionNode] with
       case List(operand: IntegerValue) => Right(operand)
       case List(operand: MatrixValue) if isNullMatrix(operand) => Right(operand)
       case List(operand: MatrixValue) if isVector(operand) =>
-        Right(IntegerValue(toInteger(operand.value.head.forall(_ != IntegerValue.intFalse))))
+        Right(IntegerValue(toInteger(!operand.value.head.contains(IntegerValue.intFalse))))
       case List(operand: MatrixValue) =>
-        Right(MatrixValue(operand.value.map(row => Vector(toInteger(row.forall(_ != IntegerValue.intFalse))))))
+        Right(MatrixValue(operand.value.map(row => Vector(toInteger(!row.contains(IntegerValue.intFalse))))))
       case _ => Left("Invalid parameters")
     }
 
