@@ -1,8 +1,7 @@
 package kamin.apl
 
 import kamin.{Arithmetic, Environment, ExpressionEvaluator, FunctionDefinitionTable, IntegerValue, Reader, Relational, Value, evaluateParameters}
-import kamin.apl.ValueExtensions.shape
-import kamin.apl.VectorValue.createVector
+import kamin.apl.VectorValue.{createVector, emptyVector}
 
 private def cannotDivideWithZero = Left("Cannot divide with zero")
 private def notOfSameShape = Left("The two operands are not of same shape")
@@ -10,40 +9,157 @@ private def notOfSameShape = Left("The two operands are not of same shape")
 private def containsZero(v: VectorValue): Boolean =
   v.value.contains(0)
 
-private def hasSameShape(v1: Vector[Vector[Int]], v2: Vector[Vector[Int]]): Boolean =
-  v1.length == v2.length &&
-    v1.head.length == v2.head.length
+private def isLogicalVector(vector: VectorValue) =
+  vector.value.forall(e => e == IntegerValue.intTrue || e == IntegerValue.intFalse)
+
+private def isShapeVector(vector: VectorValue) =
+  vector.value.length <= 2
 
 private def toInteger(boolean: Boolean): Int =
   if boolean then IntegerValue.intTrue else IntegerValue.intFalse
+
+def shape(value: Value): Either[String, VectorValue] =
+  value match
+    case IntegerValue(i) => Right(VectorValue.emptyVector)
+    case VectorValue(v) => Right(VectorValue.createVector(Seq(v.length)))
+    case MatrixValue(m) if m == Vector.empty => Right(VectorValue.createVector(Seq(0)))
+    case MatrixValue(m) => Right(VectorValue.createVector(Seq(m.length, m.head.length)))
+    case v => Left(s"Unable to determine shape of an unknown type: ${v.getClass.getName}")
+
+
+def doCompressVector(controlVector: Vector[Int], value: Vector[Int]) : Vector[Int] =
+  controlVector.zip(value).collect { case (IntegerValue.intTrue, value) => value }
+
+def doCompressMatrix(controlVector: Vector[Int], value: Vector[Vector[Int]]): Vector[Vector[Int]]=
+  value.map(v => doCompressVector(controlVector, v))
+
+def compress(controlVector: VectorValue, value: VectorValue): Either[String, Value] =
+  if shape(controlVector) == shape(value) then
+    if isLogicalVector(controlVector) then
+      Right(VectorValue.createVector(doCompressVector(controlVector.value, value.value)))
+    else Left("control vector consists of only 0 and 1")
+  else notOfSameShape
+
+def compress(controlVector: VectorValue, value: MatrixValue): Either[String, Value] =
+  shape(value) match
+    case Left(error) => Left(error)
+    case Right(matrixShape) =>
+      val matrixColumnShape = matrixShape.value(1)
+
+      if controlVector.value.length == matrixColumnShape then
+        if isLogicalVector(controlVector) then
+          Right(MatrixValue.createMatrix(doCompressMatrix(controlVector.value, value.value)))
+        else
+          Left("Control vector must consist of only 0 and 1")
+      else
+        notOfSameShape
+
+def raveling(value: Value): Either[String, VectorValue] =
+  value match
+    case IntegerValue(v) => Right(VectorValue.createVector(Seq(v)))
+    case VectorValue(v) => Right(VectorValue.createVector(v))
+    case MatrixValue(v) => Right(VectorValue.createVector(v.flatten))
+    case _ => Left("Invalid parameters")
+
+
+private def doRestructureInteger(value: Int, shape: Vector[Int]): Value =
+  shape.length match
+    case 0 => IntegerValue(value)
+    case 1 => VectorValue.createVector(Vector.fill(shape(0))(value))
+    case 2 => MatrixValue.createMatrix(Vector.fill(shape(0))(Vector.fill(shape(1))(value)))
+
+private def createMatrixFromVector(value: Vector[Int], shape: Vector[Int]): Vector[Vector[Int]] = {
+  val repeatedValues = Vector.fill((shape.head * shape(1)) / value.length)(value).flatten ++ value.take((shape.head * shape(1)) % value.length)
+  repeatedValues.grouped(shape(1)).toVector
+}
+
+private def createVectorFromVector(value: Vector[Int], shape: Vector[Int]) = {
+  Vector.fill(shape.head / value.length)(value).flatten ++ value.take(shape.head % value.length)
+}
+
+private def doRestructureVector(value: Vector[Int], shape: Vector[Int]): Value =
+  shape.length match
+    case 0 => IntegerValue(value.head)
+    case 1 => VectorValue.createVector (createVectorFromVector(value, shape))
+    case 2 => MatrixValue.createMatrix( createMatrixFromVector(value, shape))
+
+private def doRestructureMatrix(value: Vector[Vector[Int]], shape: Vector[Int]): Value =
+  val flatten = value.flatten
+  shape.length match
+    case 0 => IntegerValue(flatten.head)
+    case 1 => VectorValue.createVector(createVectorFromVector(flatten, shape))
+    case 2 => MatrixValue.createMatrix(createMatrixFromVector(flatten, shape))
+
+private def compensateForZeroVector(shape: Vector[Int]) : Vector[Int] =
+  if (shape.length == 1 && shape.head == 0)
+    Vector()
+  else
+    shape
+
+def restructuring(shape: VectorValue, value: Value): Either[String, Value]=
+  if isShapeVector(shape) then
+    value match
+      case IntegerValue(v) => Right(doRestructureInteger(v, compensateForZeroVector(shape.value)))
+      case VectorValue(v) => Right(doRestructureVector(v, compensateForZeroVector(shape.value)))
+      case MatrixValue(v) => Right(doRestructureMatrix(v, compensateForZeroVector(shape.value)))
+      case _ => Left("Invalid parameters")
+  else
+    Left("A shape vector is a Vector of length 0, 1 or 2")
+
+def catenation(value1: Value, value2: Value): Either[String, VectorValue] =
+  raveling(value1).flatMap { raveled1 =>
+    raveling(value2).flatMap { raveled2 =>
+      Right(VectorValue.createVector(raveled1.value ++ raveled2.value))
+    }
+  }
+
+def indexGeneration(index: IntegerValue): Either[String, VectorValue] =
+  Right(VectorValue.createVector(Seq.range(1, index.value + 1)))
+
+def transposition(value: Value): Either[String, Value] =
+  value match
+    case v: IntegerValue => Right(v)
+    case v: VectorValue => Right(v)
+    case v: MatrixValue => Right(MatrixValue.createMatrix(v.value.transpose))
+    case _ => Left("Invalid parameters")
+
+def subscripting(value: Value, index: VectorValue): Either[String, Value] =
+  val idx = index.value.map(_ - 1)
+  value match
+    case v: VectorValue if idx.exists(i => i < 0 || i >= v.value.length) => Left("Invalid subscripts")
+    case v: VectorValue => Right(VectorValue.createVector(idx.map(v.value)))
+    case v: MatrixValue if idx.exists(i => i < 0 || i >= v.value.length) => Left("Invalid subscripts")
+    case v: MatrixValue => Right(MatrixValue.createMatrix(idx.map(v.value)))
+    case _ => Left("Invalid parameters")
 
 def evaluateBinaryOperation[T <: Value](
                                          operand1: Value,
                                          operand2: Value,
                                          op: (Int, Int) => Int
-                                       ): Either[String, Value] = (operand1, operand2) match
+                                       ): Either[String, Value] =
+  (operand1, operand2) match
   case (IntegerValue(v1), IntegerValue(v2)) =>
     Right(IntegerValue(op(v1, v2)))
   case (IntegerValue(v1), VectorValue(v2)) =>
     Right(VectorValue.createVector(v2.map(op(v1, _))))
   case (VectorValue(v1), IntegerValue(v2)) =>
     Right(VectorValue.createVector(v1.map(op(_, v2))))
-  case (vector1: VectorValue, vector2: VectorValue) if vector1.shape == vector2.shape  =>
+  case (vector1: VectorValue, vector2: VectorValue) if shape(vector1) == shape(vector2)  =>
     Right(VectorValue.createVector(
       vector1.value.zip(vector2.value).map { case (v1, v2) => op(v1, v2)}
     ))
-  /*case (IntegerValue(v1), MatrixValue(m2)) =>
-    Right(MatrixValue(m2.map(_.map(op(v1, _)))))
+  case (IntegerValue(v1), MatrixValue(m2)) =>
+    Right(MatrixValue.createMatrix(m2.map(_.map(op(v1, _)))))
   case (MatrixValue(m1), IntegerValue(v2)) =>
-    Right(MatrixValue(m1.map(_.map(op(_, v2)))))
-  case (MatrixValue(m1), MatrixValue(m2)) if hasSameShape(m1, m2) =>
-    Right(MatrixValue(
-      m1.zip(m2).map { case (row1, row2) =>
+    Right(MatrixValue.createMatrix(m1.map(_.map(op(_, v2)))))
+  case (m1: MatrixValue, m2:MatrixValue) if shape(m1) == shape(m2) =>
+    Right(MatrixValue.createMatrix(
+      m1.value.zip(m2.value).map { case (row1, row2) =>
         row1.zip(row2).map { case (v1, v2) =>
           op(v1, v2)
         }
       }
-    ))*/
+    ))
   case _ => notOfSameShape
 
 given ExpressionEvaluator[VectorValueExpressionNode] with
@@ -92,7 +208,6 @@ given ExpressionEvaluator[OrExpressionNode] with
     }
 
 private def isNullMatrix(m: MatrixValue) = m.value.isEmpty
-private def nullMatrix = MatrixValue(Vector.empty)
 private def isVector(m: MatrixValue) = m.value.length == 1
 
 given ExpressionEvaluator[AdditionReductionExpressionNode] with
@@ -101,9 +216,9 @@ given ExpressionEvaluator[AdditionReductionExpressionNode] with
                                                                  (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
       case List(operand: IntegerValue) => Right(operand)
-      case List(operand: MatrixValue) if isNullMatrix(operand) => Right(operand)
-      case List(operand: MatrixValue) if isVector(operand) => Right(IntegerValue(operand.value.head.sum))
-      case List(operand: MatrixValue) => Right(MatrixValue(operand.value.map(row => Vector(row.sum))))
+      case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
+      case List(operand: VectorValue) => Right(IntegerValue(operand.value.sum))
+      case List(operand: MatrixValue) => Right(MatrixValue.createMatrix(operand.value.map(row => Vector(row.sum))))
       case _ => Left("Invalid parameters")
     }
 
@@ -113,9 +228,9 @@ given ExpressionEvaluator[SubtractionReductionExpressionNode] with
                                                                                 (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
       case List(operand: IntegerValue) => Right(operand)
-      case List(operand: MatrixValue) if isNullMatrix(operand) => Right(operand)
-      case List(operand: MatrixValue) if isVector(operand) => Right(IntegerValue(operand.value.head.reduce(_ - _)))
-      case List(operand: MatrixValue) => Right(MatrixValue(operand.value.map(row => Vector(row.reduce(_ - _)))))
+      case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
+      case List(operand: VectorValue) => Right(IntegerValue(operand.value.reduce(_ - _)))
+      case List(operand: MatrixValue) => Right(MatrixValue.createMatrix(operand.value.map(row => Vector(row.reduce(_ - _)))))
       case _ => Left("Invalid parameters")
     }
 
@@ -125,9 +240,9 @@ given ExpressionEvaluator[MultiplicationReductionExpressionNode] with
                                                                                    (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
       case List(operand: IntegerValue) => Right(operand)
-      case List(operand: MatrixValue) if isNullMatrix(operand) => Right(operand)
-      case List(operand: MatrixValue) if isVector(operand) => Right(IntegerValue(operand.value.head.product))
-      case List(operand: MatrixValue) => Right(MatrixValue(operand.value.map(row => Vector(row.product))))
+      case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
+      case List(operand: VectorValue) => Right(IntegerValue(operand.value.product))
+      case List(operand: MatrixValue) => Right(MatrixValue.createMatrix(operand.value.map(row => Vector(row.product))))
       case _ => Left("Invalid parameters")
     }
 
@@ -137,9 +252,10 @@ given ExpressionEvaluator[DivisionReductionExpressionNode] with
                                                                                       (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
       case List(operand: IntegerValue) => Right(operand)
-      case List(operand: MatrixValue) if isNullMatrix(operand) => Right(operand)
-      case List(operand: MatrixValue) if isVector(operand) => Right(IntegerValue(operand.value.head.reduce(_ / _)))
-      case List(operand: MatrixValue) => Right(MatrixValue(operand.value.map(row => Vector(row.reduce(_ / _)))))
+      case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
+      case List(operand: VectorValue) if operand.value.tail.contains(0) => cannotDivideWithZero
+      case List(operand: VectorValue) => Right(IntegerValue(operand.value.reduce(_/_)))
+      case List(operand: MatrixValue) => Right(MatrixValue.createMatrix(operand.value.map(row => Vector(row.reduce(_ / _)))))
       case _ => Left("Invalid parameters")
     }
 
@@ -149,9 +265,9 @@ given ExpressionEvaluator[MaximumReductionExpressionNode] with
                                                                                 (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
       case List(operand: IntegerValue) => Right(operand)
-      case List(operand: MatrixValue) if isNullMatrix(operand) => Right(operand)
-      case List(operand: MatrixValue) if isVector(operand) => Right(IntegerValue(operand.value.head.reduce(_ / _)))
-      case List(operand: MatrixValue) => Right(MatrixValue(operand.value.map(row => Vector(row.max))))
+      case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
+      case List(operand: VectorValue) => Right(IntegerValue(operand.value.max))
+      case List(operand: MatrixValue) => Right(MatrixValue.createMatrix(operand.value.map(row => Vector(row.max))))
       case _ => Left("Invalid parameters")
     }
 
@@ -160,12 +276,11 @@ given ExpressionEvaluator[AndReductionExpressionNode] with
                                                                                (using functionDefinitionTable: FunctionDefinitionTable)
                                                                                (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand: IntegerValue) => Right(operand)
-      case List(operand: MatrixValue) if isNullMatrix(operand) => Right(operand)
-      case List(operand: MatrixValue) if isVector(operand) =>
-        Right(IntegerValue(toInteger(!operand.value.head.contains(IntegerValue.intFalse))))
+      case List(operand: IntegerValue) => Right(if operand.value == IntegerValue.intFalse then IntegerValue.Zero else IntegerValue.True)
+      case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
+      case List(operand: VectorValue) => Right(if operand.value.contains(IntegerValue.intFalse) then IntegerValue.False else IntegerValue.True)
       case List(operand: MatrixValue) =>
-        Right(MatrixValue(operand.value.map(row => Vector(toInteger(!row.contains(IntegerValue.intFalse))))))
+        Right(MatrixValue.createMatrix(operand.value.map(row => Vector(toInteger(!row.contains(IntegerValue.intFalse))))))
       case _ => Left("Invalid parameters")
     }
 
@@ -174,36 +289,21 @@ given ExpressionEvaluator[OrReductionExpressionNode] with
                                                                            (using functionDefinitionTable: FunctionDefinitionTable)
                                                                            (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand: IntegerValue) => Right(operand)
-      case List(operand: MatrixValue) if isNullMatrix(operand) => Right(operand)
-      case List(operand: MatrixValue) if isVector(operand) =>
-        Right(IntegerValue(toInteger(operand.value.head.exists(_ != IntegerValue.intFalse))))
+      case List(operand: IntegerValue) => Right(if operand.value == IntegerValue.intFalse then IntegerValue.Zero else IntegerValue.True)
+      case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
+      case List(operand: VectorValue) => Right(if operand.value.exists(_ != IntegerValue.intFalse) then IntegerValue.True else IntegerValue.False)
       case List(operand: MatrixValue) =>
-        Right(MatrixValue(operand.value.map(row => Vector(toInteger(row.exists(_ != IntegerValue.intFalse))))))
+        Right(MatrixValue.createMatrix(operand.value.map(row => Vector(toInteger(row.exists(_ != IntegerValue.intFalse))))))
       case _ => Left("Invalid parameters")
     }
-
-private def isLogicalVector(matrix: MatrixValue) =
-  isVector(matrix) && matrix.value.head.forall(e => e == IntegerValue.intTrue || e == IntegerValue.intFalse)
 
 given ExpressionEvaluator[CompressionExpressionNode] with
   extension (t: CompressionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                                 (using functionDefinitionTable: FunctionDefinitionTable)
                                                                                 (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand1: MatrixValue, operand2: MatrixValue)
-        if isLogicalVector(operand1) &&
-          isVector(operand2) &&
-          operand1.value.head.length == operand2.value.head.length =>
-            Right(MatrixValue.fromVector(operand1.value.head.zip(operand2.value.head).collect {
-              case (IntegerValue.intTrue, value) => value
-            }))
-      case List(operand1: MatrixValue, operand2: MatrixValue)
-        if isLogicalVector(operand1) &&
-          operand2.value.length == operand1.value.length =>
-            Right(MatrixValue(operand2.value.map(row => row.map {
-              case value if value == IntegerValue.intTrue => value // Perform your logic here
-            })))
+      case List(operand1: VectorValue, operand2: VectorValue) => compress(operand1, operand2)
+      case List(operand1: VectorValue, operand2: MatrixValue) => compress(operand1, operand2)
       case _ => Left("Invalid parameters")
     }
 
@@ -212,14 +312,7 @@ given ExpressionEvaluator[ShapeExpressionNode] with
                                                                           (using functionDefinitionTable: FunctionDefinitionTable)
                                                                           (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand: IntegerValue) =>
-        Right(MatrixValue(Vector.empty))
-      case List(operand: MatrixValue) if isNullMatrix(operand) =>
-        Right(operand)
-      case List(operand: MatrixValue) if isVector(operand) =>
-        Right(MatrixValue.fromVector(Vector(operand.value.head.length)))
-      case List(operand: MatrixValue) =>
-        Right(MatrixValue.fromVector(Vector(operand.value.length, operand.value.head.length)))
+      case List(value) => shape(value)
       case _ => Left("Invalid parameters")
     }
 
@@ -228,41 +321,17 @@ given ExpressionEvaluator[RavelingExpressionNode] with
                                                                     (using functionDefinitionTable: FunctionDefinitionTable)
                                                                     (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand: IntegerValue) =>
-        Right(MatrixValue.fromVector(Vector(operand.value)))
-      case List(operand: MatrixValue) if isNullMatrix(operand) || isVector(operand) =>
-        Right(operand)
-      case List(operand: MatrixValue) =>
-        Right(MatrixValue.fromVector(operand.value.flatten))
+      case List(operand) =>
+        raveling(operand)
       case _ => Left("Invalid parameters")
     }
-
-private def isShapeVector(m: MatrixValue) =
-  isVector(m) && m.value.head.length <= 2
 
 given ExpressionEvaluator[RestructuringExpressionNode] with
   extension (t: RestructuringExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                           (using functionDefinitionTable: FunctionDefinitionTable)
                                                                           (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
-      case List(_, operand2: MatrixValue) if isNullMatrix(operand2) => Right(nullMatrix)
-      case List(operand1: MatrixValue, operand2: IntegerValue) if isNullMatrix(operand1) =>
-        Right(MatrixValue.fromVector(Vector(operand2.value)))
-      case List(operand1: MatrixValue, operand2: MatrixValue) if isNullMatrix(operand1) =>
-        Right(MatrixValue.fromVector(Vector(operand2.value.head.head)))
-      case List(operand1: MatrixValue, operand2: IntegerValue) if isShapeVector(operand1) =>
-        val shape = operand1.value.head
-        if shape.length == 1 then
-          Right(MatrixValue.fromVector(Vector.fill(shape(0))(operand2.value)))
-        else
-          Right(MatrixValue(Vector.fill(shape(0))(Vector.fill(shape(1))(operand2.value))))
-      case List(operand1: MatrixValue, operand2: MatrixValue) if isShapeVector(operand1) =>
-        val shape = operand1.value.head
-        val candidates = Iterator.continually(operand2.value.flatten).flatten
-        if shape.length == 1 then
-          Right(MatrixValue.fromVector(candidates.take(shape(0)).toVector))
-        else
-          Right(MatrixValue(candidates.take(shape(0)*shape(1)).grouped(shape(1)).map(_.toVector).toVector))
+      case List(shape: VectorValue, value) => restructuring(shape, value)
       case _ => Left("Invalid parameters")
     }
 
@@ -271,14 +340,7 @@ given ExpressionEvaluator[CatenationExpressionNode] with
                                                                             (using functionDefinitionTable: FunctionDefinitionTable)
                                                                             (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand1: IntegerValue, operand2: IntegerValue) =>
-        Right(MatrixValue.fromVector(Vector(operand1.value, operand2.value)))
-      case List(operand1: IntegerValue, operand2: MatrixValue) =>
-        Right(MatrixValue.fromVector(operand1.value +: operand2.value.flatten))
-      case List(operand1: MatrixValue, operand2: IntegerValue)  =>
-        Right(MatrixValue.fromVector(operand1.value.flatten :+ operand2.value))
-      case List(operand1: MatrixValue, operand2: MatrixValue) =>
-        Right(MatrixValue.fromVector(operand1.value.flatten ++ operand2.value.flatten))
+      case List(operand1, operand2) => catenation(operand1, operand2)
       case _ => Left("Invalid parameters")
     }
 
@@ -287,10 +349,7 @@ given ExpressionEvaluator[IndexGenerationExpressionNode] with
                                                                          (using functionDefinitionTable: FunctionDefinitionTable)
                                                                          (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand: IntegerValue) if operand.value >= 1 =>
-        Right(MatrixValue.fromVector(Vector.range(1, operand.value)))
-      case List(operand: MatrixValue) if !isNullMatrix(operand) && operand.value.head(0) >= 1 =>
-        Right(MatrixValue.fromVector(Vector.range(1, operand.value.head(0))))
+      case List(operand: IntegerValue) => indexGeneration(operand)
       case _ => Left("Invalid parameters")
     }
 
@@ -299,9 +358,7 @@ given ExpressionEvaluator[TranspositionExpressionNode] with
                                                                               (using functionDefinitionTable: FunctionDefinitionTable)
                                                                               (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand: IntegerValue) => Right(operand)
-      case List(operand: MatrixValue) if isNullMatrix(operand) || isVector(operand) => Right(operand)
-      case List(operand: MatrixValue) => Right(MatrixValue(operand.value.transpose))
+      case List(operand) => transposition(operand)
       case _ => Left("Invalid parameters")
     }
 
@@ -313,43 +370,41 @@ given ExpressionEvaluator[SubscriptingExpressionNode] with
                                                                          (using functionDefinitionTable: FunctionDefinitionTable)
                                                                          (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand1: MatrixValue, operand2: IntegerValue)
-        if !isNullMatrix(operand1) && isValidIndexVectorForMatrix(Vector(operand2.value), operand1.value) =>
-        Right(MatrixValue.fromVector(operand1.value.map(row => row(operand2.value - 1))))
-      case List(operand1: MatrixValue, operand2: MatrixValue)
-        if !isNullMatrix(operand1) && isVector(operand2) &&
-          isValidIndexVectorForMatrix(operand2.value.head, operand1.value) =>
-        val zeroBased = operand2.value.head.map(_ - 1)
-        Right(MatrixValue(operand1.value.zipWithIndex.collect {
-          case (value, index) if zeroBased.contains(index) => value
-        }.map(row => zeroBased.map(row))))
+      case List(operand1: VectorValue, operand2: IntegerValue) =>
+        subscripting(operand1, VectorValue.createVector(Seq(operand2.value)))
+      case List(operand1: MatrixValue, operand2: IntegerValue) =>
+        subscripting(operand1, VectorValue.createVector(Seq(operand2.value)))
+      case List(operand1: VectorValue, operand2: VectorValue) =>
+        subscripting(operand1, operand2)
+      case List(operand1: MatrixValue, operand2: VectorValue) =>
+        subscripting(operand1, operand2)
       case _ => Left("Invalid parameters")
     }
 
-given Arithmetic[IntegerValue, MatrixValue] with
+object IntegerMatrixArithmetic extends Arithmetic[IntegerValue, MatrixValue] :
   override def addition(operand1: IntegerValue, operand2: MatrixValue): Either[String, Value] =
-    Right(MatrixValue(operand2.value.map( row => row.map(operand1.value + _))))
+    Right(MatrixValue.createMatrix(operand2.value.map( row => row.map(operand1.value + _))))
 
   override def subtraction(operand1: IntegerValue, operand2: MatrixValue): Either[String, Value] =
-    Right(MatrixValue(operand2.value.map( row => row.map(operand1.value - _))))
+    Right(MatrixValue.createMatrix(operand2.value.map( row => row.map(operand1.value - _))))
 
   override def multiplication(operand1: IntegerValue, operand2: MatrixValue): Either[String, Value] =
-    Right(MatrixValue(operand2.value.map( row => row.map(operand1.value * _))))
+    Right(MatrixValue.createMatrix(operand2.value.map( row => row.map(operand1.value * _))))
 
   override def division(operand1: IntegerValue, operand2: MatrixValue): Either[String, Value] =
-    Right(MatrixValue(operand2.value.map( row => row.map(operand1.value / _))))
+    Right(MatrixValue.createMatrix(operand2.value.map( row => row.map(operand1.value / _))))
 
-given Relational[IntegerValue, MatrixValue] with
+object IntegerMatrixRelational extends Relational[IntegerValue, MatrixValue]:
   override def equal(operand1: IntegerValue, operand2: MatrixValue): Either[String, Value] =
-    Right(MatrixValue(operand2.value.map( row => row.map(
+    Right(MatrixValue.createMatrix(operand2.value.map( row => row.map(
       e => toInteger(e == operand1.value)))))
 
   override def greaterThan(operand1: IntegerValue, operand2: MatrixValue): Either[String, Value] =
-    Right(MatrixValue(operand2.value.map( row => row.map(
+    Right(MatrixValue.createMatrix(operand2.value.map( row => row.map(
       e => toInteger(operand1.value > e)))))
 
   override def lessThan(operand1: IntegerValue, operand2: MatrixValue): Either[String, Value] =
-    Right(MatrixValue(operand2.value.map( row => row.map(
+    Right(MatrixValue.createMatrix(operand2.value.map( row => row.map(
       e => toInteger(operand1.value < e)))))
 
 
@@ -408,25 +463,25 @@ object IntegerVectorRelational extends Relational[IntegerValue, VectorValue]:
 
 object VectorVectorArithmetic extends Arithmetic[VectorValue, VectorValue]:
   override def addition(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
-    if operand1.shape == operand2.shape then
+    if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1+v2)))
     else
       notOfSameShape
 
   override def subtraction(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
-    if operand1.shape == operand2.shape then
+    if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1 - v2)))
     else
       notOfSameShape
 
   override def multiplication(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
-    if operand1.shape == operand2.shape then
+    if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1 * v2)))
     else
       notOfSameShape
 
   override def division(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
-    if operand1.shape == operand2.shape then
+    if shape(operand1) == shape(operand2) then
       if (containsZero(operand2))
         cannotDivideWithZero
       else
@@ -436,131 +491,130 @@ object VectorVectorArithmetic extends Arithmetic[VectorValue, VectorValue]:
 
 object VectorVectorRelational extends Relational[VectorValue, VectorValue]:
   override def equal(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
-    if operand1.shape == operand2.shape then
+    if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 == v2) }))
     else
       notOfSameShape
 
   override def greaterThan(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
-    if operand1.shape == operand2.shape then
+    if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 > v2) }))
     else
       notOfSameShape
 
   override def lessThan(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
-    if operand1.shape == operand2.shape then
+    if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 < v2) }))
     else
       notOfSameShape
-/*given Arithmetic[MatrixValue, IntegerValue] with
+object MatrixIntegerArithmetic extends Arithmetic[MatrixValue, IntegerValue]:
   override def addition(operand1: MatrixValue, operand2: IntegerValue): Either[String, Value] =
-    Right(MatrixValue(operand1.value.map( row => row.map(_ + operand2.value))))
+    Right(MatrixValue.createMatrix(operand1.value.map( row => row.map(_ + operand2.value))))
 
   override def subtraction(operand1: MatrixValue, operand2: IntegerValue): Either[String, Value] =
-    Right(MatrixValue(operand1.value.map( row => row.map(_ - operand2.value))))
+    Right(MatrixValue.createMatrix(operand1.value.map( row => row.map(_ - operand2.value))))
 
   override def multiplication(operand1: MatrixValue, operand2: IntegerValue): Either[String, Value] =
-    Right(MatrixValue(operand1.value.map( row => row.map(_ * operand2.value))))
+    Right(MatrixValue.createMatrix(operand1.value.map( row => row.map(_ * operand2.value))))
 
   override def division(operand1: MatrixValue, operand2: IntegerValue): Either[String, Value] =
-    Right(MatrixValue(operand1.value.map( row => row.map(_ / operand2.value))))
+    Right(MatrixValue.createMatrix(operand1.value.map( row => row.map(_ / operand2.value))))
 
-given Relational[MatrixValue, IntegerValue] with
+object MatrixIntegerRelational extends Relational[MatrixValue, IntegerValue]:
   override def equal(operand1: MatrixValue, operand2: IntegerValue): Either[String, Value] =
-    Right(MatrixValue(operand1.value.map( row => row.map(
+    Right(MatrixValue.createMatrix(operand1.value.map( row => row.map(
       e => toInteger(e == operand2.value)))))
 
   override def greaterThan(operand1: MatrixValue, operand2: IntegerValue): Either[String, Value] =
-    Right(MatrixValue(operand1.value.map( row => row.map(
+    Right(MatrixValue.createMatrix(operand1.value.map( row => row.map(
       e => toInteger(e > operand2.value)))))
 
   override def lessThan(operand1: MatrixValue, operand2: IntegerValue): Either[String, Value] =
-    Right(MatrixValue(operand1.value.map( row => row.map(
+    Right(MatrixValue.createMatrix(operand1.value.map( row => row.map(
       e => toInteger(e < operand2.value)))))
 
-given Arithmetic[MatrixValue, MatrixValue] with
+object MatrixMatrixArithmetic extends Arithmetic[MatrixValue, MatrixValue]:
   override def addition(operand1: MatrixValue, operand2: MatrixValue): Either[String, Value] =
-    if hasSameShape(operand1.value, operand2.value) then
+    if shape(operand1) == shape(operand2) then
       Right(
-        MatrixValue(
+        MatrixValue.createMatrix(
           operand1.value.zip(operand2.value).map { case (row1, row2) =>
             row1.zip(row2).map { case (v1, v2) => v1 + v2 }
           }
         )
       )
     else
-      differentShapes
+      notOfSameShape
 
   override def subtraction(operand1: MatrixValue, operand2: MatrixValue): Either[String, Value] =
-    if hasSameShape(operand1.value, operand2.value) then
+    if shape(operand1) == shape(operand2) then
       Right(
-        MatrixValue(
+        MatrixValue.createMatrix(
           operand1.value.zip(operand2.value).map { case (row1, row2) =>
             row1.zip(row2).map { case (v1, v2) => v1 - v2 }
           }
         )
       )
     else
-      differentShapes
+      notOfSameShape
 
   override def multiplication(operand1: MatrixValue, operand2: MatrixValue): Either[String, Value] =
-    if hasSameShape(operand1.value, operand2.value) then
+    if shape(operand1) == shape(operand2) then
       Right(
-        MatrixValue(
+        MatrixValue.createMatrix(
           operand1.value.zip(operand2.value).map { case (row1, row2) =>
             row1.zip(row2).map { case (v1, v2) => v1 * v2 }
           }
         )
       )
     else
-      differentShapes
+      notOfSameShape
 
   override def division(operand1: MatrixValue, operand2: MatrixValue): Either[String, Value] =
-    if hasSameShape(operand1.value, operand2.value) then
+    if shape(operand1) == shape(operand2) then
       Right(
-        MatrixValue(
+        MatrixValue.createMatrix(
           operand1.value.zip(operand2.value).map { case (row1, row2) =>
             row1.zip(row2).map { case (v1, v2) => v1 / v2 }
           }
         )
       )
     else
-      differentShapes
+      notOfSameShape
 
-given Relational[MatrixValue, MatrixValue] with
+object MatrixMatrixRelational extends Relational[MatrixValue, MatrixValue]:
   override def equal(operand1: MatrixValue, operand2: MatrixValue): Either[String, Value] =
-    if hasSameShape(operand1.value, operand2.value) then
+    if shape(operand1) == shape(operand2) then
       Right(
-        MatrixValue(
+        MatrixValue.createMatrix(
           operand1.value.zip(operand2.value).map { case (row1, row2) =>
             row1.zip(row2).map { case (v1, v2) => toInteger(v1 == v2) }
           }
         )
       )
     else
-      differentShapes
+      notOfSameShape
 
   override def greaterThan(operand1: MatrixValue, operand2: MatrixValue): Either[String, Value] =
-    if hasSameShape(operand1.value, operand2.value) then
+    if shape(operand1) == shape(operand2) then
       Right(
-        MatrixValue(
+        MatrixValue.createMatrix(
           operand1.value.zip(operand2.value).map { case (row1, row2) =>
             row1.zip(row2).map { case (v1, v2) => toInteger(v1 > v2) }
           }
         )
       )
     else
-      differentShapes
+      notOfSameShape
 
   override def lessThan(operand1: MatrixValue, operand2: MatrixValue): Either[String, Value] =
-    if hasSameShape(operand1.value, operand2.value) then
+    if shape(operand1) == shape(operand2) then
       Right(
-        MatrixValue(
+        MatrixValue.createMatrix(
           operand1.value.zip(operand2.value).map { case (row1, row2) =>
             row1.zip(row2).map { case (v1, v2) => toInteger(v1 < v2) }
           }
         )
       )
     else
-      differentShapes
-*/
+      notOfSameShape
