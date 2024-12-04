@@ -207,9 +207,6 @@ given ExpressionEvaluator[OrExpressionNode] with
       case _ => Left("Invalid parameters")
     }
 
-private def isNullMatrix(m: MatrixValue) = m.value.isEmpty
-private def isVector(m: MatrixValue) = m.value.length == 1
-
 given ExpressionEvaluator[AdditionReductionExpressionNode] with
   extension (t: AdditionReductionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                  (using functionDefinitionTable: FunctionDefinitionTable)
@@ -361,9 +358,6 @@ given ExpressionEvaluator[TranspositionExpressionNode] with
       case List(operand) => transposition(operand)
       case _ => Left("Invalid parameters")
     }
-
-private def isValidIndexVectorForMatrix(indexVector: Vector[Int], matrix: Vector[Vector[Int]]) =
-  indexVector.min > 0 && indexVector.max <= matrix.head.length && (matrix.length == 1 || indexVector.max <= matrix.length)
 
 given ExpressionEvaluator[SubscriptingExpressionNode] with
   extension (t: SubscriptingExpressionNode) override def evaluateExpression(using environment: Environment)
