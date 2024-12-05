@@ -1,6 +1,7 @@
 package kamin
 
 import basic.BasicEvaluator
+import kamin.apl.APLEvaluator
 import org.jline.reader.{LineReader, LineReaderBuilder}
 import org.jline.terminal.TerminalBuilder
 
@@ -39,7 +40,12 @@ def main(): Unit =
 
     input match
       case "exit" => continue = false
-      case "basic" => evaluator = BasicEvaluator()
+      case "basic" =>
+        kamin.RegistriesSetup.initialize()
+        evaluator = BasicEvaluator()
+      case "apl" =>
+        kamin.apl.RegistriesSetup.initialize()
+        evaluator = APLEvaluator()
       case _ =>
         while !isBalanced(input) do
           input = input + " " + lineReader.readLine(">").removeComment()
