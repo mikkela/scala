@@ -17,12 +17,9 @@ object VectorValue:
   def emptyVector: VectorValue = VectorValue(Vector.empty)
 
 case class MatrixValue private(value: Vector[Vector[Int]]) extends Value:
-  require(
-    value.forall(_.length == value.head.length),
-    "All rows in the matrix must have the same number of columns and be non-empty."
-  )
   override def isTrue: Boolean = !value.forall(_.forall(_ == 0))
   override def toString: String = value.map(_.mkString(" ")).mkString("\n")
+
 object MatrixValue:
   def createMatrix(values: Seq[Seq[Int]]): MatrixValue =
     if (values.isEmpty || values.head.isEmpty) then
@@ -31,7 +28,6 @@ object MatrixValue:
       MatrixValue(values.map(_.toVector).toVector)
 
   def emptyMatrix: MatrixValue = MatrixValue(Vector.empty)
-  def fromVector(vector: Vector[Int]): MatrixValue = MatrixValue(Vector(vector))
 
 trait VectorValueReader extends Reader:
   override def read(input: String): Either[String, Value] =
