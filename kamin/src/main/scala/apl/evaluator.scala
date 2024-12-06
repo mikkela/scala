@@ -464,18 +464,30 @@ object VectorVectorArithmetic extends Arithmetic[VectorValue, VectorValue]:
   override def addition(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
     if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1+v2)))
+    else if operand1.value.length == 1 then
+      IntegerVectorArithmetic.addition(IntegerValue(operand1.value.head), operand2)
+    else if operand2.value.length == 1 then
+      VectorIntegerArithmetic.addition(operand1, IntegerValue(operand2.value.head))
     else
       notOfSameShape
 
   override def subtraction(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
     if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1 - v2)))
+    else if operand1.value.length == 1 then
+      IntegerVectorArithmetic.subtraction(IntegerValue(operand1.value.head), operand2)
+    else if operand2.value.length == 1 then
+      VectorIntegerArithmetic.subtraction(operand1, IntegerValue(operand2.value.head))
     else
       notOfSameShape
 
   override def multiplication(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
     if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1 * v2)))
+    else if operand1.value.length == 1 then
+      IntegerVectorArithmetic.multiplication(IntegerValue(operand1.value.head), operand2)
+    else if operand2.value.length == 1 then
+      VectorIntegerArithmetic.multiplication(operand1, IntegerValue(operand2.value.head))
     else
       notOfSameShape
 
@@ -485,6 +497,10 @@ object VectorVectorArithmetic extends Arithmetic[VectorValue, VectorValue]:
         cannotDivideWithZero
       else
         Right(VectorValue.createVector(operand1.value.zip(operand2.value).map((v1, v2) => v1 / v2)))
+    else if operand1.value.length == 1 then
+      IntegerVectorArithmetic.division(IntegerValue(operand1.value.head), operand2)
+    else if operand2.value.length == 1 then
+      VectorIntegerArithmetic.division(operand1, IntegerValue(operand2.value.head))
     else
       notOfSameShape
 
@@ -492,20 +508,33 @@ object VectorVectorRelational extends Relational[VectorValue, VectorValue]:
   override def equal(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
     if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 == v2) }))
+    else if operand1.value.length == 1 then
+      IntegerVectorRelational.equal(IntegerValue(operand1.value.head), operand2)
+    else if operand2.value.length == 1 then
+      VectorIntegerRelational.equal(operand1, IntegerValue(operand2.value.head))
     else
       notOfSameShape
 
   override def greaterThan(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
     if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 > v2) }))
+    else if operand1.value.length == 1 then
+      IntegerVectorRelational.greaterThan(IntegerValue(operand1.value.head), operand2)
+    else if operand2.value.length == 1 then
+      VectorIntegerRelational.greaterThan(operand1, IntegerValue(operand2.value.head))
     else
       notOfSameShape
 
   override def lessThan(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
     if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 < v2) }))
+    else if operand1.value.length == 1 then
+      IntegerVectorRelational.lessThan(IntegerValue(operand1.value.head), operand2)
+    else if operand2.value.length == 1 then
+      VectorIntegerRelational.lessThan(operand1, IntegerValue(operand2.value.head))
     else
       notOfSameShape
+
 object MatrixIntegerArithmetic extends Arithmetic[MatrixValue, IntegerValue]:
   override def addition(operand1: MatrixValue, operand2: IntegerValue): Either[String, Value] =
     Right(MatrixValue.createMatrix(operand1.value.map( row => row.map(_ + operand2.value))))
@@ -542,6 +571,10 @@ object MatrixMatrixArithmetic extends Arithmetic[MatrixValue, MatrixValue]:
           }
         )
       )
+    else if operand1.value.length == 1 && operand1.value.head.length == 1 then
+      IntegerMatrixArithmetic.addition(IntegerValue(operand1.value.head.head), operand2)
+    else if operand2.value.length == 1 then
+      MatrixIntegerArithmetic.addition(operand1, IntegerValue(operand2.value.head.head))
     else
       notOfSameShape
 
@@ -554,6 +587,10 @@ object MatrixMatrixArithmetic extends Arithmetic[MatrixValue, MatrixValue]:
           }
         )
       )
+    else if operand1.value.length == 1 && operand1.value.head.length == 1 then
+      IntegerMatrixArithmetic.subtraction(IntegerValue(operand1.value.head.head), operand2)
+    else if operand2.value.length == 1 then
+      MatrixIntegerArithmetic.subtraction(operand1, IntegerValue(operand2.value.head.head))
     else
       notOfSameShape
 
@@ -566,6 +603,10 @@ object MatrixMatrixArithmetic extends Arithmetic[MatrixValue, MatrixValue]:
           }
         )
       )
+    else if operand1.value.length == 1 && operand1.value.head.length == 1 then
+      IntegerMatrixArithmetic.multiplication(IntegerValue(operand1.value.head.head), operand2)
+    else if operand2.value.length == 1 then
+      MatrixIntegerArithmetic.multiplication(operand1, IntegerValue(operand2.value.head.head))
     else
       notOfSameShape
 
@@ -578,6 +619,10 @@ object MatrixMatrixArithmetic extends Arithmetic[MatrixValue, MatrixValue]:
           }
         )
       )
+    else if operand1.value.length == 1 && operand1.value.head.length == 1 then
+      IntegerMatrixArithmetic.division(IntegerValue(operand1.value.head.head), operand2)
+    else if operand2.value.length == 1 then
+      MatrixIntegerArithmetic.division(operand1, IntegerValue(operand2.value.head.head))
     else
       notOfSameShape
 
@@ -591,6 +636,10 @@ object MatrixMatrixRelational extends Relational[MatrixValue, MatrixValue]:
           }
         )
       )
+    else if operand1.value.length == 1 && operand1.value.head.length == 1 then
+      IntegerMatrixRelational.equal(IntegerValue(operand1.value.head.head), operand2)
+    else if operand2.value.length == 1 then
+      MatrixIntegerRelational.equal(operand1, IntegerValue(operand2.value.head.head))
     else
       notOfSameShape
 
@@ -603,6 +652,10 @@ object MatrixMatrixRelational extends Relational[MatrixValue, MatrixValue]:
           }
         )
       )
+    else if operand1.value.length == 1 && operand1.value.head.length == 1 then
+      IntegerMatrixRelational.greaterThan(IntegerValue(operand1.value.head.head), operand2)
+    else if operand2.value.length == 1 then
+      MatrixIntegerRelational.greaterThan(operand1, IntegerValue(operand2.value.head.head))
     else
       notOfSameShape
 
@@ -615,5 +668,9 @@ object MatrixMatrixRelational extends Relational[MatrixValue, MatrixValue]:
           }
         )
       )
+    else if operand1.value.length == 1 && operand1.value.head.length == 1 then
+      IntegerMatrixRelational.lessThan(IntegerValue(operand1.value.head.head), operand2)
+    else if operand2.value.length == 1 then
+      MatrixIntegerRelational.lessThan(operand1, IntegerValue(operand2.value.head.head))
     else
       notOfSameShape
