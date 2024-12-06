@@ -6,7 +6,6 @@ object RegistriesSetup:
   def initialize(): Unit =
     kamin.RegistriesSetup.initialize()
 
-    println("A")
     kamin.ExpressionEvaluatorRegistry.register(classOf[VectorValueExpressionNode], summon[ExpressionEvaluator[VectorValueExpressionNode]])
     kamin.ExpressionEvaluatorRegistry.register(classOf[MaximumExpressionNode], summon[ExpressionEvaluator[MaximumExpressionNode]])
     kamin.ExpressionEvaluatorRegistry.register(classOf[AndExpressionNode], summon[ExpressionEvaluator[AndExpressionNode]])
@@ -29,7 +28,7 @@ object RegistriesSetup:
     kamin.ArithmeticRegistry.register(classOf[VectorValue], classOf[IntegerValue], VectorIntegerArithmetic)
     kamin.ArithmeticRegistry.register(classOf[IntegerValue], classOf[VectorValue], IntegerVectorArithmetic)
     kamin.ArithmeticRegistry.register(classOf[VectorValue], classOf[VectorValue], VectorVectorArithmetic)
-    println("B")
+
     kamin.ArithmeticRegistry.register(classOf[MatrixValue], classOf[IntegerValue], MatrixIntegerArithmetic)
     kamin.ArithmeticRegistry.register(classOf[IntegerValue], classOf[MatrixValue], IntegerMatrixArithmetic)
     kamin.ArithmeticRegistry.register(classOf[MatrixValue], classOf[MatrixValue], MatrixMatrixArithmetic)

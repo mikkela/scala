@@ -13,6 +13,20 @@ class IndexGenerationSpec extends AnyFunSpec {
       assert(result == Right(VectorValue.createVector(Seq(1, 2, 3, 4, 5))))
     }
 
+    it("should generate a VectorValue of integers from 1 to n for a Vector with n as the first element") {
+      val index = VectorValue.createVector(Seq(5, 2))
+
+      val result = indexGeneration(index)
+      assert(result == Right(VectorValue.createVector(Seq(1, 2, 3, 4, 5))))
+    }
+
+    it("should generate a VectorValue of integers from 1 to n for a Matrix with n as the first element") {
+      val index = MatrixValue.createMatrix(Vector(Vector(5, 2), Vector(6, 2)))
+
+      val result = indexGeneration(index)
+      assert(result == Right(VectorValue.createVector(Seq(1, 2, 3, 4, 5))))
+    }
+
     it("should return a VectorValue with a single element when the IntegerValue is 1") {
       val index = IntegerValue(1)
 

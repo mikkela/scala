@@ -113,8 +113,13 @@ def catenation(value1: Value, value2: Value): Either[String, VectorValue] =
     }
   }
 
-def indexGeneration(index: IntegerValue): Either[String, VectorValue] =
-  Right(VectorValue.createVector(Seq.range(1, index.value + 1)))
+def indexGeneration(index: Value): Either[String, VectorValue] =
+  index match
+    case v: IntegerValue => Right(VectorValue.createVector(Seq.range(1, v.value + 1)))
+    case v: VectorValue if !v.value.isEmpty => Right(VectorValue.createVector(Seq.range(1, v.value.head + 1)))
+    case v: MatrixValue if !v.value.isEmpty => Right(VectorValue.createVector(Seq.range(1, v.value.head.head + 1)))
+    case _ => Left("Invalid parameters")
+
 
 def transposition(value: Value): Either[String, Value] =
   value match
@@ -346,7 +351,7 @@ given ExpressionEvaluator[IndexGenerationExpressionNode] with
                                                                          (using functionDefinitionTable: FunctionDefinitionTable)
                                                                          (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand: IntegerValue) => indexGeneration(operand)
+      case List(operand) => indexGeneration(operand)
       case _ => Left("Invalid parameters")
     }
 
