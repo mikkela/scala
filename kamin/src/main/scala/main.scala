@@ -1,7 +1,7 @@
 package kamin
 
-import basic.BasicEvaluator
 import kamin.apl.APLEvaluator
+import kamin.basic.BasicEvaluator
 import org.jline.reader.{LineReader, LineReaderBuilder}
 import org.jline.terminal.TerminalBuilder
 
@@ -26,7 +26,10 @@ implicit class StringExtensions(val s: String) extends AnyVal:
 @main
 def main(): Unit =
   val terminal = TerminalBuilder.terminal()
-  val lineReader = LineReaderBuilder.builder().terminal(terminal).build()
+  val lineReader = LineReaderBuilder.builder()
+    .terminal(terminal)
+    .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
+    .build()
   var evaluator: Evaluator = BasicEvaluator()
 
   RegistriesSetup.initialize()
