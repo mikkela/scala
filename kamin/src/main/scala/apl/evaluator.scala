@@ -278,7 +278,7 @@ given ExpressionEvaluator[AndReductionExpressionNode] with
                                                                                (using functionDefinitionTable: FunctionDefinitionTable)
                                                                                (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand: IntegerValue) => Right(if operand.value == IntegerValue.intFalse then IntegerValue.Zero else IntegerValue.True)
+      case List(operand: IntegerValue) => Right(if operand.value == IntegerValue.intFalse then IntegerValue.False else IntegerValue.True)
       case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
       case List(operand: VectorValue) => Right(if operand.value.contains(IntegerValue.intFalse) then IntegerValue.False else IntegerValue.True)
       case List(operand: MatrixValue) =>
@@ -291,7 +291,7 @@ given ExpressionEvaluator[OrReductionExpressionNode] with
                                                                            (using functionDefinitionTable: FunctionDefinitionTable)
                                                                            (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
-      case List(operand: IntegerValue) => Right(if operand.value == IntegerValue.intFalse then IntegerValue.Zero else IntegerValue.True)
+      case List(operand: IntegerValue) => Right(if operand.value == IntegerValue.intFalse then IntegerValue.False else IntegerValue.True)
       case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
       case List(operand: VectorValue) => Right(if operand.value.exists(_ != IntegerValue.intFalse) then IntegerValue.True else IntegerValue.False)
       case List(operand: MatrixValue) =>
