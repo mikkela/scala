@@ -333,6 +333,7 @@ given ExpressionEvaluator[RestructuringExpressionNode] with
                                                                           (using functionDefinitionTable: FunctionDefinitionTable)
                                                                           (using reader: Reader): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
+      case List(shape: IntegerValue, value: Value) => restructuring(VectorValue.createVector(Seq(shape.value)), value)
       case List(shape: VectorValue, value) => restructuring(shape, value)
       case _ => Left("Invalid parameters")
     }
