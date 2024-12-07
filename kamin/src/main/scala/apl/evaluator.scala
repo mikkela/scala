@@ -170,15 +170,17 @@ def evaluateBinaryOperation[T <: Value](
 given ExpressionEvaluator[VectorValueExpressionNode] with
   extension (t: VectorValueExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                            (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                           (using reader: Reader): Either[String, Value] =
+                                                                           (using reader: Reader)
+                                                                          (using falseValue: Value): Either[String, Value] =
     Right(t.vectorValue)
 
 
 given ExpressionEvaluator[MaximumExpressionNode] with
   extension (t: MaximumExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                              (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                             (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
+                                                                             (using reader: Reader)
+                                                                              (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand1, operand2) =>
         evaluateBinaryOperation(operand1, operand2, Math.max)
       case _ => Left("Invalid parameters")
@@ -187,8 +189,9 @@ given ExpressionEvaluator[MaximumExpressionNode] with
 given ExpressionEvaluator[AndExpressionNode] with
   extension (t: AndExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                         (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                        (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
+                                                                        (using reader: Reader)
+                                                                        (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand1, operand2) =>
         evaluateBinaryOperation(
           operand1,
@@ -201,8 +204,9 @@ given ExpressionEvaluator[AndExpressionNode] with
 given ExpressionEvaluator[OrExpressionNode] with
   extension (t: OrExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                   (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                  (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
+                                                                  (using reader: Reader)
+                                                                  (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand1, operand2) =>
         evaluateBinaryOperation(
           operand1,
@@ -215,8 +219,9 @@ given ExpressionEvaluator[OrExpressionNode] with
 given ExpressionEvaluator[AdditionReductionExpressionNode] with
   extension (t: AdditionReductionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                  (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                 (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                 (using reader: Reader)
+                                                                 (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand: IntegerValue) => Right(operand)
       case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
       case List(operand: VectorValue) => Right(IntegerValue(operand.value.sum))
@@ -227,8 +232,9 @@ given ExpressionEvaluator[AdditionReductionExpressionNode] with
 given ExpressionEvaluator[SubtractionReductionExpressionNode] with
   extension (t: SubtractionReductionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                                 (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                                (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                                (using reader: Reader)
+                                                                                (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand: IntegerValue) => Right(operand)
       case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
       case List(operand: VectorValue) => Right(IntegerValue(operand.value.reduce(_ - _)))
@@ -239,8 +245,9 @@ given ExpressionEvaluator[SubtractionReductionExpressionNode] with
 given ExpressionEvaluator[MultiplicationReductionExpressionNode] with
   extension (t: MultiplicationReductionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                                    (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                                   (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                                   (using reader: Reader)
+                                                                                   (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand: IntegerValue) => Right(operand)
       case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
       case List(operand: VectorValue) => Right(IntegerValue(operand.value.product))
@@ -251,8 +258,9 @@ given ExpressionEvaluator[MultiplicationReductionExpressionNode] with
 given ExpressionEvaluator[DivisionReductionExpressionNode] with
   extension (t: DivisionReductionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                                       (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                                      (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                                      (using reader: Reader)
+                                                                                      (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand: IntegerValue) => Right(operand)
       case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
       case List(operand: VectorValue) if operand.value.tail.contains(0) => cannotDivideWithZero
@@ -264,8 +272,9 @@ given ExpressionEvaluator[DivisionReductionExpressionNode] with
 given ExpressionEvaluator[MaximumReductionExpressionNode] with
   extension (t: MaximumReductionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                                 (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                                (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                                (using reader: Reader)
+                                                                                (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand: IntegerValue) => Right(operand)
       case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
       case List(operand: VectorValue) => Right(IntegerValue(operand.value.max))
@@ -276,8 +285,9 @@ given ExpressionEvaluator[MaximumReductionExpressionNode] with
 given ExpressionEvaluator[AndReductionExpressionNode] with
   extension (t: AndReductionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                                (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                               (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                               (using reader: Reader)
+                                                                               (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand: IntegerValue) => Right(if operand.value == IntegerValue.intFalse then IntegerValue.False else IntegerValue.True)
       case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
       case List(operand: VectorValue) => Right(if operand.value.contains(IntegerValue.intFalse) then IntegerValue.False else IntegerValue.True)
@@ -289,8 +299,9 @@ given ExpressionEvaluator[AndReductionExpressionNode] with
 given ExpressionEvaluator[OrReductionExpressionNode] with
   extension (t: OrReductionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                            (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                           (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                           (using reader: Reader)
+                                                                           (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand: IntegerValue) => Right(if operand.value == IntegerValue.intFalse then IntegerValue.False else IntegerValue.True)
       case List(operand: VectorValue) if operand == VectorValue.emptyVector => Right(VectorValue.emptyVector)
       case List(operand: VectorValue) => Right(if operand.value.exists(_ != IntegerValue.intFalse) then IntegerValue.True else IntegerValue.False)
@@ -302,8 +313,9 @@ given ExpressionEvaluator[OrReductionExpressionNode] with
 given ExpressionEvaluator[CompressionExpressionNode] with
   extension (t: CompressionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                                 (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                                (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
+                                                                                (using reader: Reader)
+                                                                                (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand1: VectorValue, operand2: VectorValue) => compress(operand1, operand2)
       case List(operand1: VectorValue, operand2: MatrixValue) => compress(operand1, operand2)
       case _ => Left("Invalid parameters")
@@ -312,8 +324,9 @@ given ExpressionEvaluator[CompressionExpressionNode] with
 given ExpressionEvaluator[ShapeExpressionNode] with
   extension (t: ShapeExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                           (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                          (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                          (using reader: Reader)
+                                                                          (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(value) => shape(value)
       case _ => Left("Invalid parameters")
     }
@@ -321,8 +334,9 @@ given ExpressionEvaluator[ShapeExpressionNode] with
 given ExpressionEvaluator[RavelingExpressionNode] with
   extension (t: RavelingExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                     (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                    (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                    (using reader: Reader)
+                                                                    (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand) =>
         raveling(operand)
       case _ => Left("Invalid parameters")
@@ -331,8 +345,9 @@ given ExpressionEvaluator[RavelingExpressionNode] with
 given ExpressionEvaluator[RestructuringExpressionNode] with
   extension (t: RestructuringExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                           (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                          (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
+                                                                          (using reader: Reader)
+                                                                          (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(shape: IntegerValue, value: Value) => restructuring(VectorValue.createVector(Seq(shape.value)), value)
       case List(shape: VectorValue, value) => restructuring(shape, value)
       case _ => Left("Invalid parameters")
@@ -341,8 +356,9 @@ given ExpressionEvaluator[RestructuringExpressionNode] with
 given ExpressionEvaluator[CatenationExpressionNode] with
   extension (t: CatenationExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                             (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                            (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
+                                                                            (using reader: Reader)
+                                                                            (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand1, operand2) => catenation(operand1, operand2)
       case _ => Left("Invalid parameters")
     }
@@ -350,8 +366,9 @@ given ExpressionEvaluator[CatenationExpressionNode] with
 given ExpressionEvaluator[IndexGenerationExpressionNode] with
   extension (t: IndexGenerationExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                          (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                         (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                         (using reader: Reader)
+                                                                         (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand) => indexGeneration(operand)
       case _ => Left("Invalid parameters")
     }
@@ -359,8 +376,9 @@ given ExpressionEvaluator[IndexGenerationExpressionNode] with
 given ExpressionEvaluator[TranspositionExpressionNode] with
   extension (t: TranspositionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                               (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                              (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader).flatMap {
+                                                                              (using reader: Reader)
+                                                                              (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand) => transposition(operand)
       case _ => Left("Invalid parameters")
     }
@@ -368,8 +386,9 @@ given ExpressionEvaluator[TranspositionExpressionNode] with
 given ExpressionEvaluator[SubscriptingExpressionNode] with
   extension (t: SubscriptingExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                          (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                         (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader).flatMap {
+                                                                         (using reader: Reader)
+                                                                         (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue).flatMap {
       case List(operand1: VectorValue, operand2: IntegerValue) =>
         subscripting(operand1, VectorValue.createVector(Seq(operand2.value)))
       case List(operand1: MatrixValue, operand2: IntegerValue) =>

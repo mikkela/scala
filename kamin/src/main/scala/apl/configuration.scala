@@ -110,7 +110,7 @@ class APLEvaluator() extends Evaluator:
         functionDefinitionTable.register(f)
         f.function
       case Right(e: ExpressionNode) =>
-        e.evaluateExpression(using environment)(using functionDefinitionTable)(using reader) match
+        e.evaluateExpression(using environment)(using functionDefinitionTable)(using reader)(using IntegerValue.False) match
           case Left(l) => l
           case Right(r) => r.toString
 

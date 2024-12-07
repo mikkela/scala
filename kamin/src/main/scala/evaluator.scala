@@ -10,7 +10,8 @@ trait Evaluator:
 trait ExpressionEvaluator[T <: ExpressionNode]:
   extension (t: T) def evaluateExpression(using environment: Environment)
                                          (using functionDefinitionTable: FunctionDefinitionTable)
-                                         (using reader: Reader): Either[String, Value]
+                                         (using reader: Reader)
+                                         (using falseValue: Value): Either[String, Value]
 
 trait OperandValidator[T1 <: Value, T2 <: Value]:
   def validateOperands(operand1: Value, operand2: Value): Option[(T1, T2)] =
@@ -38,7 +39,8 @@ private def unrecognizedName(name: String) : String = s"$name is not recognized"
 given ExpressionEvaluator[ExpressionNode] with
   extension (t: ExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                (using functionDefinitionTable: FunctionDefinitionTable)
-                                                               (using reader: Reader): Either[String, Value]=
+                                                               (using reader: Reader)
+                                                               (using falseValue: Value): Either[String, Value]=
 
   ExpressionEvaluatorRegistry.get(t.getClass) match
     case Some(evaluator) => evaluator.asInstanceOf[ExpressionEvaluator[t.type]].evaluateExpression(t)(using environment)(using functionDefinitionTable)(using reader)
@@ -48,13 +50,15 @@ given ExpressionEvaluator[ExpressionNode] with
 given ExpressionEvaluator[IntegerValueExpressionNode] with
   extension (t: IntegerValueExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                            (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                           (using reader: Reader): Either[String, Value] =
+                                                                           (using reader: Reader)
+                                                                           (using falseValue: Value): Either[String, Value] =
     Right(t.integerValue)
 
 given ExpressionEvaluator[VariableExpressionNode] with
   extension (t: VariableExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                        (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                       (using reader: Reader): Either[String, Value] =
+                                                                       (using reader: Reader)
+                                                                       (using falseValue: Value): Either[String, Value] =
     environment.get(t.variableExpression) match
       case Some(value) => Right(value)
       case None => Left(unrecognizedName(t.variableExpression))
@@ -62,7 +66,8 @@ given ExpressionEvaluator[VariableExpressionNode] with
 given ExpressionEvaluator[IfExpressionNode] with
   extension (t: IfExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                  (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                 (using reader: Reader): Either[String, Value] =
+                                                                 (using reader: Reader)
+                                                                 (using falseValue: Value): Either[String, Value] =
     t.testExpression.evaluateExpression match
       case Left(error) => Left(error)
       case Right(test) if test.isTrue => t.consequenceExpression.evaluateExpression
@@ -71,7 +76,8 @@ given ExpressionEvaluator[IfExpressionNode] with
 given ExpressionEvaluator[SetExpressionNode] with
   extension (t: SetExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                   (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                  (using reader: Reader): Either[String, Value] =
+                                                                  (using reader: Reader)
+                                                                  (using falseValue: Value): Either[String, Value] =
     t.value.evaluateExpression match
       case Left(value) => Left(value)
       case Right(value) =>
@@ -81,12 +87,13 @@ given ExpressionEvaluator[SetExpressionNode] with
 given ExpressionEvaluator[WhileExpressionNode] with
   extension (t: WhileExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                     (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                    (using reader: Reader): Either[String, Value] =
+                                                                    (using reader: Reader)
+                                                                    (using falseValue: Value): Either[String, Value] =
     @tailrec
     def evaluateLoop(): Either[String, Value] =
       t.testExpression.evaluateExpression match
         case Left(error) => Left(error)
-        case Right(test) if !test.isTrue => Right(IntegerValue.False)
+        case Right(test) if !test.isTrue => Right(falseValue)
         case Right(_) =>
           t.bodyExpression.evaluateExpression match
             case Left(error) => Left(error)
@@ -97,8 +104,9 @@ given ExpressionEvaluator[WhileExpressionNode] with
 given ExpressionEvaluator[BeginExpressionNode] with
   extension (t: BeginExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                     (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                    (using reader: Reader): Either[String, Value] =
-    t.expressions.foldLeft[Either[String, Value]](Right(IntegerValue.False)) { (acc, expr) =>
+                                                                    (using reader: Reader)
+                                                                    (using falseValue: Value): Either[String, Value] =
+    t.expressions.foldLeft[Either[String, Value]](Right(falseValue)) { (acc, expr) =>
       acc match
         case Left(error) => Left(error)
         case Right(_) => expr.evaluateExpression
@@ -113,22 +121,24 @@ private def invalidFunctionArity(function: String, expectedArity: Int): Left[Str
 private def evaluateParameters(parameters: Seq[ExpressionNode],
                                environment: Environment,
                                functionDefinitionTable: FunctionDefinitionTable,
-                               reader: Reader
+                               reader: Reader,
+                               falseValue: Value
                               ): Either[String, List[Value]] =
   parameters.foldLeft(Right(List.empty[Value]): Either[String, List[Value]]) { (acc, p) =>
     acc match
       case Left(error) => Left(error) // If there's already an error, keep it
       case Right(params) =>
-        p.evaluateExpression(using environment)(using functionDefinitionTable)(using reader) match
+        p.evaluateExpression(using environment)(using functionDefinitionTable)(using reader)(using falseValue) match
           case Left(error) => Left(error) // Stop and return the error if evaluation fails
           case Right(result) => Right(params :+ result) // Append result to the list if successful
   }
 given ExpressionEvaluator[FunctionCallExpressionNode] with
   extension (t: FunctionCallExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                            (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                           (using reader: Reader): Either[String, Value] =
+                                                                           (using reader: Reader)
+                                                                           (using falseValue: Value): Either[String, Value] =
 
-    val parameters = evaluateParameters(t.expressions, environment, functionDefinitionTable, reader)
+    val parameters = evaluateParameters(t.expressions, environment, functionDefinitionTable, reader, falseValue)
 
     functionDefinitionTable.lookupFunctionDefinition(t.function) match
       case None => undefinedFunctionName(t.function)
@@ -170,36 +180,40 @@ def performArithmeticOperation(
 given ExpressionEvaluator[AdditionExpressionNode] with
   extension (t: AdditionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                        (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                       (using reader: Reader): Either[String, Value] =
+                                                                       (using reader: Reader)
+                                                                       (using falseValue: Value): Either[String, Value] =
 
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader) match
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
       case Right(params) => performArithmeticOperation(params, (arith, op1, op2) => arith.addition(op1, op2))
 
 given ExpressionEvaluator[SubtractionExpressionNode] with
   extension (t: SubtractionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                           (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                          (using reader: Reader): Either[String, Value] =
+                                                                          (using reader: Reader)
+                                                                          (using falseValue: Value): Either[String, Value] =
 
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader) match
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
       case Right(params) => performArithmeticOperation(params, (arith, op1, op2) => arith.subtraction(op1, op2))
 
 given ExpressionEvaluator[MultiplicationExpressionNode] with
   extension (t: MultiplicationExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                              (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                             (using reader: Reader): Either[String, Value] =
+                                                                             (using reader: Reader)
+                                                                             (using falseValue: Value): Either[String, Value] =
 
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader) match
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
       case Right(params) => performArithmeticOperation(params, (arith, op1, op2) => arith.multiplication(op1, op2))
 
 given ExpressionEvaluator[DivisionExpressionNode] with
   extension (t: DivisionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                        (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                       (using reader: Reader): Either[String, Value] =
+                                                                       (using reader: Reader)
+                                                                       (using falseValue: Value): Either[String, Value] =
 
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader) match
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
       case Right(params) => performArithmeticOperation(params, (arith, op1, op2) => arith.division(op1, op2))
 
@@ -227,33 +241,37 @@ def performRelationalOperation(
 given ExpressionEvaluator[EqualityExpressionNode] with
   extension (t: EqualityExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                        (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                       (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader) match
+                                                                       (using reader: Reader)
+                                                                       (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
       case Right(params) => performRelationalOperation(params, (relational, op1, op2) => relational.equal(op1, op2))
 
 given ExpressionEvaluator[LessThanExpressionNode] with
   extension (t: LessThanExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                        (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                       (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader) match
+                                                                       (using reader: Reader)
+                                                                       (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
       case Right(params) => performRelationalOperation(params, (relational, op1, op2) => relational.lessThan(op1, op2))
 
 given ExpressionEvaluator[GreaterThanExpressionNode] with
   extension (t: GreaterThanExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                           (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                          (using reader: Reader): Either[String, Value] =
-    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader) match
+                                                                          (using reader: Reader)
+                                                                          (using falseValue: Value): Either[String, Value] =
+    evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
       case Right(params) => performRelationalOperation(params, (relational, op1, op2) => relational.greaterThan(op1, op2))
 
 given ExpressionEvaluator[PrintExpressionNode] with
   extension (t: PrintExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                     (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                    (using reader: Reader): Either[String, Value] =
+                                                                    (using reader: Reader)
+                                                                    (using falseValue: Value): Either[String, Value] =
 
-    evaluateParameters(Seq(t.argument), environment, functionDefinitionTable, reader) match
+    evaluateParameters(Seq(t.argument), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
       case Right(params) =>
         println(params.head)
@@ -262,7 +280,8 @@ given ExpressionEvaluator[PrintExpressionNode] with
 given ExpressionEvaluator[ReadExpressionNode] with
   extension (t: ReadExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                    (using functionDefinitionTable: FunctionDefinitionTable)
-                                                                   (using reader: Reader): Either[String, Value] =
+                                                                   (using reader: Reader)
+                                                                   (using falseValue: Value): Either[String, Value] =
     val input = StdIn.readLine()
 
     reader.read(input)
