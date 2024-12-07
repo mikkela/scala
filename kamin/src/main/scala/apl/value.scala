@@ -4,7 +4,7 @@ import kamin.{IntegerValue, Reader, Value}
 import scala.util.{Failure, Success, Try}
 
 case class VectorValue private(value: Vector[Int]) extends Value:
-  override def isTrue: Boolean = this != VectorValue.emptyVector
+  override def isTrue: Boolean = this.value.exists(_ != 0)
   override def toString: String = value.mkString(" ") + "\n"
 
 object VectorValue:
@@ -17,7 +17,7 @@ object VectorValue:
   def emptyVector: VectorValue = VectorValue(Vector.empty)
 
 case class MatrixValue private(value: Vector[Vector[Int]]) extends Value:
-  override def isTrue: Boolean = !value.forall(_.forall(_ == 0))
+  override def isTrue: Boolean = value.exists(_.exists(_ != 0))
   override def toString: String = value.map(_.mkString(" ")).mkString("\n")
 
 object MatrixValue:
