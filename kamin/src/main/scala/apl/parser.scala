@@ -1,7 +1,6 @@
 package kamin.apl
 
-import kamin.{BasicLanguageFamilyParserContext, ExpressionNode, IntegerValueToken, LeftParenthesisToken, Parser, PeekingIterator, QuoteToken, RightParenthesisToken, Token, TokenExtensions, checkTokensForPresence, invalidEndOfProgram, invalidToken, parseInteger, parseListOfElements, parseOperator}
-import kamin.apl.{AndSlashToken, AndToken, AsteriskSlashToken, MaxSlashToken, MaxToken, MinusSlashToken, OrSlashToken, OrToken, PlusSlashToken, SlashSlashToken}
+import kamin.{BasicLanguageFamilyParserContext, ExpressionNode, LeftParenthesisToken, Parser, PeekingIterator, QuoteToken, RightParenthesisToken, Token, TokenExtensions, checkTokensForPresence, invalidEndOfProgram, invalidToken, parseInteger, parseListOfElements, parseOperator}
 
 trait VectorValueExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyParserContext]:
   override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, ExpressionNode] =

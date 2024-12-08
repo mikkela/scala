@@ -2,6 +2,7 @@ package kamin
 
 import kamin.apl.APLEvaluator
 import kamin.basic.BasicEvaluator
+import kamin.lisp.LispEvaluator
 import org.jline.reader.{LineReader, LineReaderBuilder}
 import org.jline.terminal.TerminalBuilder
 
@@ -49,6 +50,9 @@ def main(): Unit =
       case "apl" =>
         kamin.apl.RegistriesSetup.initialize()
         evaluator = APLEvaluator()
+      case "lisp" =>
+        kamin.lisp.RegistriesSetup.initialize()
+        evaluator = LispEvaluator()
       case _ =>
         while !isBalanced(input) do
           input = input + " " + lineReader.readLine(">").removeComment()
