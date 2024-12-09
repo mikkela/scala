@@ -1,6 +1,6 @@
 package kamin.apl
 
-import kamin.{Arithmetic, IntegerValue, Reader, Relational, Value, cannotDivideWithZero}
+import kamin.{Arithmetic, BooleanDefinition, IntegerValue, Reader, Relational, Value, cannotDivideWithZero}
 
 import scala.util.{Failure, Success, Try}
 
@@ -106,27 +106,27 @@ given Arithmetic[VectorValue, VectorValue] with
       notOfSameShape
 
 given Relational[VectorValue, IntegerValue] with
-  override def equal(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
+  override def equal(operand1: VectorValue, operand2: IntegerValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
     Right(VectorValue.createVector(operand1.value.map(e => toInteger(e == operand2.value))))
 
-  override def greaterThan(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
+  override def greaterThan(operand1: VectorValue, operand2: IntegerValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
     Right(VectorValue.createVector(operand1.value.map(e => toInteger(e > operand2.value))))
 
-  override def lessThan(operand1: VectorValue, operand2: IntegerValue): Either[String, Value] =
+  override def lessThan(operand1: VectorValue, operand2: IntegerValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
     Right(VectorValue.createVector(operand1.value.map(e => toInteger(e < operand2.value))))
 
 given Relational[IntegerValue, VectorValue] with
-  override def equal(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =
+  override def equal(operand1: IntegerValue, operand2: VectorValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
     Right(VectorValue.createVector(operand2.value.map(e => toInteger(e == operand1.value))))
 
-  override def greaterThan(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =
+  override def greaterThan(operand1: IntegerValue, operand2: VectorValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
     Right(VectorValue.createVector(operand2.value.map(e => toInteger(operand1.value > e))))
 
-  override def lessThan(operand1: IntegerValue, operand2: VectorValue): Either[String, Value] =
+  override def lessThan(operand1: IntegerValue, operand2: VectorValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
     Right(VectorValue.createVector(operand2.value.map(e => toInteger(operand1.value < e))))
 
 given Relational[VectorValue, VectorValue] with
-  override def equal(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
+  override def equal(operand1: VectorValue, operand2: VectorValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
     if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 == v2) }))
     else if operand1.value.length == 1 then
@@ -136,7 +136,7 @@ given Relational[VectorValue, VectorValue] with
     else
       notOfSameShape
 
-  override def greaterThan(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
+  override def greaterThan(operand1: VectorValue, operand2: VectorValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
     if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 > v2) }))
     else if operand1.value.length == 1 then
@@ -146,7 +146,7 @@ given Relational[VectorValue, VectorValue] with
     else
       notOfSameShape
 
-  override def lessThan(operand1: VectorValue, operand2: VectorValue): Either[String, Value] =
+  override def lessThan(operand1: VectorValue, operand2: VectorValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
     if shape(operand1) == shape(operand2) then
       Right(VectorValue.createVector(operand1.value.zip(operand2.value).map { case (v1, v2) => toInteger(v1 < v2) }))
     else if operand1.value.length == 1 then

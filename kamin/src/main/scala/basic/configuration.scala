@@ -1,6 +1,6 @@
 package kamin.basic
 
-import kamin.{AdditionExpressionNodeParser, AsteriskToken, BasicLanguageFamilyParserContext, BeginExpressionNodeParser, BeginToken, DefineToken, DivisionExpressionNodeParser, Environment, EqualToken, EqualityExpressionNodeParser, Evaluator, ExpressionNode, FunctionCallExpressionNodeParser, FunctionDefinitionNode, FunctionDefinitionNodeParser, FunctionDefinitionTable, GlobalAndLocalScopeEnvironment, GreaterThanExpressionNodeParser, GreaterThanToken, IfExpressionNodeParser, IfToken, IntegerValue, IntegerValueExpressionNodeParser, IntegerValueReader, LeftParenthesisToken, LessThanExpressionNodeParser, LessThanToken, Lexer, MinusToken, MultiplicationExpressionNodeParser, Parser, PeekingIterator, PlusToken, PrintExpressionNodeParser, PrintToken, ReadExpressionNodeParser, ReadToken, Reader, RightParenthesisToken, SetExpressionNodeParser, SetToken, SlashToken, SubtractionExpressionNodeParser, Token, VariableExpressionNodeParser, WhileExpressionNodeParser, WhileToken, given_ExpressionEvaluator_ExpressionNode}
+import kamin.{AdditionExpressionNodeParser, AsteriskToken, BasicLanguageFamilyParserContext, BeginExpressionNodeParser, BeginToken, BooleanDefinition, DefineToken, DivisionExpressionNodeParser, Environment, EqualToken, EqualityExpressionNodeParser, Evaluator, ExpressionNode, FunctionCallExpressionNodeParser, FunctionDefinitionNode, FunctionDefinitionNodeParser, FunctionDefinitionTable, GlobalAndLocalScopeEnvironment, GreaterThanExpressionNodeParser, GreaterThanToken, IfExpressionNodeParser, IfToken, IntegerValue, IntegerValueExpressionNodeParser, IntegerValueReader, LeftParenthesisToken, LessThanExpressionNodeParser, LessThanToken, Lexer, MinusToken, MultiplicationExpressionNodeParser, Parser, PeekingIterator, PlusToken, PrintExpressionNodeParser, PrintToken, ReadExpressionNodeParser, ReadToken, Reader, RightParenthesisToken, SetExpressionNodeParser, SetToken, SlashToken, SubtractionExpressionNodeParser, Token, Value, VariableExpressionNodeParser, WhileExpressionNodeParser, WhileToken, given_ExpressionEvaluator_ExpressionNode}
 
 object BasicLexer extends Lexer(
   Seq(LeftParenthesisToken, RightParenthesisToken),
@@ -50,7 +50,10 @@ class BasicEvaluator() extends Evaluator:
         functionDefinitionTable.register(f)
         f.function
       case Right(e: ExpressionNode) =>
-        e.evaluateExpression(using environment)(using functionDefinitionTable)(using reader)(using IntegerValue.False) match
+        e.evaluateExpression(using environment)(using functionDefinitionTable)(using reader)(using new BooleanDefinition {
+          override def falseValue: Value = IntegerValue.False
+          override def trueValue: Value = IntegerValue.True
+        }) match
           case Left(l) => l
           case Right(r) => r.toString
 

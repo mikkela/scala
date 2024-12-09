@@ -23,7 +23,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
         (using GlobalAndLocalScopeEnvironment())
         (using new FunctionDefinitionTable {})
         (using new Reader {})
-        (using IntegerValue.False) shouldBe Right(IntegerValue(100))
+        (using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Right(IntegerValue(100))
     }
   }
 
@@ -36,7 +40,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using environment)
         (using new FunctionDefinitionTable{})
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(20))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Right(IntegerValue(20))
     }
 
     it("should return an error if the variable does not exists") {
@@ -45,7 +53,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using new FunctionDefinitionTable{})
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("x is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("x is not recognized")
     }
   }
 
@@ -56,7 +68,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using new FunctionDefinitionTable{})
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(2))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Right(IntegerValue(2))
     }
 
     it("should return the third expression if the evaluation of the first is zero") {
@@ -65,7 +81,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using new FunctionDefinitionTable{})
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(3))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Right(IntegerValue(3))
     }
 
     it("should return the the error if the evaluation of the first an error") {
@@ -74,7 +94,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using new FunctionDefinitionTable{}) 
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("x is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("x is not recognized")
     }
   }
 
@@ -86,7 +110,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using env)
         (using new FunctionDefinitionTable{})
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(265))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Right(IntegerValue(265))
       env.get("foo") shouldBe Some(IntegerValue(265))
     }
 
@@ -96,7 +124,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("x is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("x is not recognized")
     }
   }
 
@@ -107,7 +139,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(0))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        }) shouldBe Right(IntegerValue(0))
     }
 
     it("should only evaluateExpression the body if the test returns non-zero") {
@@ -118,7 +154,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using env)
         (using new FunctionDefinitionTable{}) 
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(0))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        }) shouldBe Right(IntegerValue(0))
       env.get("x") shouldBe Some(IntegerValue(0))
     }
 
@@ -128,7 +168,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("x is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("x is not recognized")
     }
 
     it("should return the the error if the evaluation of the body expression returns an error") {
@@ -137,7 +181,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("x is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("x is not recognized")
     }
   }
 
@@ -152,7 +200,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using env)
         (using new FunctionDefinitionTable{})
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(123))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        }) shouldBe Right(IntegerValue(123))
       env.get("x") shouldBe Some(IntegerValue(2))
       env.get("y") shouldBe Some(IntegerValue(25))
     }
@@ -167,7 +219,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using env)
         (using new FunctionDefinitionTable{})
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        }) shouldBe Left("y is not recognized")
       env.get("x") shouldBe Some(IntegerValue(2))
     }
   }
@@ -188,7 +244,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = FunctionCallExpressionNode("foo", Seq(
         IntegerValueExpressionNode(10),
         IntegerValueExpressionNode(20)))
-      sut.evaluateExpression(using env)(using table)(using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(500))
+      sut.evaluateExpression(using env)(using table)(using new Reader {})(using new BooleanDefinition{
+        override def falseValue: Value = IntegerValue.False
+
+        override def trueValue: Value = IntegerValue.True
+      }) shouldBe Right(IntegerValue(500))
     }
 
     it("should remove the local scope environment afterwards") {
@@ -208,7 +268,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = FunctionCallExpressionNode("foo", Seq(
         IntegerValueExpressionNode(10),
         IntegerValueExpressionNode(20)))
-      sut.evaluateExpression(using env)(using table)(using new Reader {})(using IntegerValue.False)
+      sut.evaluateExpression(using env)(using table)(using new Reader {})(using new BooleanDefinition{
+        override def falseValue: Value = IntegerValue.False
+
+        override def trueValue: Value = IntegerValue.True
+      })
       env.get("x") shouldBe None
       env.get("y") shouldBe None
     }
@@ -233,7 +297,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using env)
         (using table)
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(30))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        }) shouldBe Right(IntegerValue(30))
       env.get("a") shouldBe Some(IntegerValue(10))
       env.get("b") shouldBe Some(IntegerValue(20))
     }
@@ -255,7 +323,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using env)
         (using table)
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("y is not recognized")
     }
 
     it("should return the the error if the function call have too few parameters") {
@@ -272,7 +344,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using env)
         (using table)
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("foo requires 2 arguments")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("foo requires 2 arguments")
     }
 
     it("should return the the error if the function call have too many parameters") {
@@ -290,7 +366,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using env)
         (using table)
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("foo requires 2 arguments")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("foo requires 2 arguments")
     }
 
     it("should return the the error if the function evaluation fails") {
@@ -307,7 +387,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using env)
         (using table)
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        }) shouldBe Left("y is not recognized")
     }
   }
 
@@ -317,7 +401,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(30))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Right(IntegerValue(30))
     }
 
     it("should return the the error if one of the parameter evaluations returns an error") {
@@ -325,7 +413,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("y is not recognized")
     }
   }
 
@@ -335,7 +427,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(10))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Right(IntegerValue(10))
     }
 
     it("should return the the error if one of the parameter evaluations returns an error") {
@@ -343,7 +439,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("y is not recognized")
     }
   }
 
@@ -353,7 +453,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(600))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Right(IntegerValue(600))
     }
 
     it("should return the the error if one of the parameter evaluations returns an error") {
@@ -361,7 +465,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("y is not recognized")
     }
   }
 
@@ -371,7 +479,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False)  shouldBe Right(IntegerValue(2))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        })  shouldBe Right(IntegerValue(2))
     }
 
     it("should return the the error if one of the parameter evaluations returns an error") {
@@ -379,7 +491,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False)  shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        })  shouldBe Left("y is not recognized")
     }
   }
 
@@ -389,7 +505,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(1))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        }) shouldBe Right(IntegerValue(1))
     }
 
     it("should return 0 if the operands are not equal") {
@@ -397,7 +517,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False)  shouldBe Right(IntegerValue(0))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        })  shouldBe Right(IntegerValue(0))
     }
 
     it("should return the the error if one of the parameter evaluations returns an error") {
@@ -405,7 +529,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False)  shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        })  shouldBe Left("y is not recognized")
     }
   }
 
@@ -415,7 +543,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False)  shouldBe Right(IntegerValue(0))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        })  shouldBe Right(IntegerValue(0))
     }
 
     it("should return 1 if the first operand is smaller than the second") {
@@ -423,7 +555,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False)  shouldBe Right(IntegerValue(1))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        })  shouldBe Right(IntegerValue(1))
     }
 
     it("should return the the error if one of the parameter evaluations returns an error") {
@@ -431,7 +567,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False)  shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        })  shouldBe Left("y is not recognized")
     }
   }
 
@@ -441,7 +581,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(1))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        }) shouldBe Right(IntegerValue(1))
     }
 
     it("should return 0 if the first operand is smaller than the second") {
@@ -449,7 +593,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(0))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = IntegerValue.False
+
+          override def trueValue: Value = IntegerValue.True
+        }) shouldBe Right(IntegerValue(0))
     }
 
     it("should return the the error if one of the parameter evaluations returns an error") {
@@ -457,7 +605,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("y is not recognized")
     }
   }
 
@@ -467,7 +619,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Right(IntegerValue(400))
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Right(IntegerValue(400))
     }
 
     it("should return the the error if one of the parameter evaluations returns an error") {
@@ -475,7 +631,11 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       sut.evaluateExpression
         (using GlobalAndLocalScopeEnvironment())
         (using FunctionDefinitionTable())
-        (using new Reader {})(using IntegerValue.False) shouldBe Left("y is not recognized")
+        (using new Reader {})(using new BooleanDefinition{
+          override def falseValue: Value = ???
+
+          override def trueValue: Value = ???
+        }) shouldBe Left("y is not recognized")
     }
   }
 }

@@ -42,11 +42,11 @@ given Arithmetic[IntegerValue, IntegerValue] with
       cannotDivideWithZero
 
 given Relational[IntegerValue, IntegerValue] with
-  override def equal(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
-    Right(if operand1.value == operand2.value then IntegerValue.True else IntegerValue.False)
+  override def equal(operand1: IntegerValue, operand2: IntegerValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
+    Right(if operand1.value == operand2.value then booleanDefinition.trueValue else booleanDefinition.falseValue)
 
-  override def greaterThan(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
-    Right(if operand1.value > operand2.value then IntegerValue.True else IntegerValue.False)
+  override def greaterThan(operand1: IntegerValue, operand2: IntegerValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
+    Right(if operand1.value > operand2.value then booleanDefinition.trueValue else booleanDefinition.falseValue)
 
-  override def lessThan(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
-    Right(if operand1.value < operand2.value then IntegerValue.True else IntegerValue.False)
+  override def lessThan(operand1: IntegerValue, operand2: IntegerValue)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
+    Right(if operand1.value < operand2.value then booleanDefinition.trueValue else booleanDefinition.falseValue)
