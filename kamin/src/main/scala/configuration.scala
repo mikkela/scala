@@ -1,5 +1,22 @@
 package kamin
 
+import kamin.apl.{MatrixValue, VectorValue}
+import kamin.apl.given_Arithmetic_VectorValue_IntegerValue
+import kamin.apl.given_Arithmetic_IntegerValue_VectorValue
+import kamin.apl.given_Arithmetic_VectorValue_VectorValue
+import kamin.apl.given_Arithmetic_IntegerValue_MatrixValue
+import kamin.apl.given_Arithmetic_MatrixValue_IntegerValue
+import kamin.apl.given_Arithmetic_MatrixValue_MatrixValue
+import kamin.apl.given_Relational_VectorValue_IntegerValue
+import kamin.apl.given_Relational_IntegerValue_VectorValue
+import kamin.apl.given_Relational_VectorValue_VectorValue
+import kamin.apl.given_Relational_IntegerValue_MatrixValue
+import kamin.apl.given_Relational_MatrixValue_IntegerValue
+import kamin.apl.given_Relational_MatrixValue_MatrixValue
+import kamin.lisp.given_Relational_SymbolValue_SymbolValue
+import kamin.lisp.given_Relational_ListValue_ListValue
+import kamin.lisp.{ListValue, SymbolValue}
+
 object RegistriesSetup:
   def initialize(): Unit =
     ExpressionEvaluatorRegistry.clear()
@@ -20,8 +37,22 @@ object RegistriesSetup:
     ExpressionEvaluatorRegistry.register(classOf[PrintExpressionNode], summon[ExpressionEvaluator[PrintExpressionNode]])
     ExpressionEvaluatorRegistry.register(classOf[ReadExpressionNode], summon[ExpressionEvaluator[ReadExpressionNode]])
 
-    ArithmeticRegistry.clear()
-    ArithmeticRegistry.register(classOf[IntegerValue], classOf[IntegerValue], IntegerArithmetic)
+given ArithmeticDispatcher =
+  Dispatcher.create[IntegerValue, IntegerValue, Arithmetic]
+    .orElse(Dispatcher.create[IntegerValue, MatrixValue, Arithmetic])
+    .orElse(Dispatcher.create[MatrixValue, IntegerValue, Arithmetic])
+    .orElse(Dispatcher.create[MatrixValue, MatrixValue, Arithmetic])
+    .orElse(Dispatcher.create[VectorValue, IntegerValue, Arithmetic])
+    .orElse(Dispatcher.create[IntegerValue, VectorValue, Arithmetic])
+    .orElse(Dispatcher.create[VectorValue, VectorValue, Arithmetic])
 
-    RelationalRegistry.clear()
-    RelationalRegistry.register(classOf[IntegerValue], classOf[IntegerValue], IntegerRelational)
+given RelationalDispatcher =
+  Dispatcher.create[IntegerValue, IntegerValue, Relational]
+    .orElse(Dispatcher.create[IntegerValue, MatrixValue, Relational])
+    .orElse(Dispatcher.create[MatrixValue, IntegerValue, Relational])
+    .orElse(Dispatcher.create[MatrixValue, MatrixValue, Relational])
+    .orElse(Dispatcher.create[VectorValue, IntegerValue, Relational])
+    .orElse(Dispatcher.create[IntegerValue, VectorValue, Relational])
+    .orElse(Dispatcher.create[VectorValue, VectorValue, Relational])
+    .orElse(Dispatcher.create[SymbolValue, SymbolValue, Relational])
+    .orElse(Dispatcher.create[ListValue, ListValue, Relational])

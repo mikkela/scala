@@ -24,3 +24,29 @@ trait IntegerValueReader extends Reader:
       case Success(number) => Right(IntegerValue(number))
       case Failure(_) => super.read(input)
     }
+
+given Arithmetic[IntegerValue, IntegerValue] with
+  override def addition(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(IntegerValue(operand1.value + operand2.value))
+
+  override def subtraction(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(IntegerValue(operand1.value - operand2.value))
+
+  override def multiplication(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(IntegerValue(operand1.value * operand2.value))
+
+  override def division(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    if operand2.value != 0 then
+      Right(IntegerValue(operand1.value / operand2.value))
+    else
+      cannotDivideWithZero
+
+given Relational[IntegerValue, IntegerValue] with
+  override def equal(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(if operand1.value == operand2.value then IntegerValue.True else IntegerValue.False)
+
+  override def greaterThan(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(if operand1.value > operand2.value then IntegerValue.True else IntegerValue.False)
+
+  override def lessThan(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
+    Right(if operand1.value < operand2.value then IntegerValue.True else IntegerValue.False)

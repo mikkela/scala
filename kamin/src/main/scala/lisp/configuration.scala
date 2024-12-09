@@ -15,10 +15,6 @@ object RegistriesSetup:
     kamin.ExpressionEvaluatorRegistry.register(classOf[ListTestExpressionNode], summon[ExpressionEvaluator[ListTestExpressionNode]])
     kamin.ExpressionEvaluatorRegistry.register(classOf[NullTestExpressionNode], summon[ExpressionEvaluator[NullTestExpressionNode]])
 
-    kamin.RelationalRegistry.clear()
-    kamin.RelationalRegistry.register(classOf[IntegerValue], classOf[IntegerValue], IntegerRelational)
-    kamin.RelationalRegistry.register(classOf[SymbolValue], classOf[SymbolValue], SymbolRelational)
-    kamin.RelationalRegistry.register(classOf[ListValue], classOf[ListValue], ListRelational)
 
 object LispLexer extends Lexer(
   Seq(LeftParenthesisToken, RightParenthesisToken, QuoteToken),
@@ -52,7 +48,7 @@ object LispExpressionNodeParser
     with SymbolTestExpressionNodeParser
     with ListTestExpressionNodeParser
     with NullTestExpressionNodeParser
-    
+
 object LispParser extends Parser[FunctionDefinitionNode | ExpressionNode, BasicLanguageFamilyParserContext]:
   override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, FunctionDefinitionNode | ExpressionNode] =
     LispFunDefNodeParser.parse(tokens) match

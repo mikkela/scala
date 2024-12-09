@@ -25,21 +25,6 @@ object RegistriesSetup:
     kamin.ExpressionEvaluatorRegistry.register(classOf[IndexGenerationExpressionNode], summon[ExpressionEvaluator[IndexGenerationExpressionNode]])
     kamin.ExpressionEvaluatorRegistry.register(classOf[TranspositionExpressionNode], summon[ExpressionEvaluator[TranspositionExpressionNode]])
     kamin.ExpressionEvaluatorRegistry.register(classOf[SubscriptingExpressionNode], summon[ExpressionEvaluator[SubscriptingExpressionNode]])
-    kamin.ArithmeticRegistry.register(classOf[VectorValue], classOf[IntegerValue], VectorIntegerArithmetic)
-    kamin.ArithmeticRegistry.register(classOf[IntegerValue], classOf[VectorValue], IntegerVectorArithmetic)
-    kamin.ArithmeticRegistry.register(classOf[VectorValue], classOf[VectorValue], VectorVectorArithmetic)
-
-    kamin.ArithmeticRegistry.register(classOf[MatrixValue], classOf[IntegerValue], MatrixIntegerArithmetic)
-    kamin.ArithmeticRegistry.register(classOf[IntegerValue], classOf[MatrixValue], IntegerMatrixArithmetic)
-    kamin.ArithmeticRegistry.register(classOf[MatrixValue], classOf[MatrixValue], MatrixMatrixArithmetic)
-
-    kamin.RelationalRegistry.register(classOf[VectorValue], classOf[IntegerValue], VectorIntegerRelational)
-    kamin.RelationalRegistry.register(classOf[IntegerValue], classOf[VectorValue], IntegerVectorRelational)
-    kamin.RelationalRegistry.register(classOf[VectorValue], classOf[VectorValue], VectorVectorRelational)
-
-    kamin.RelationalRegistry.register(classOf[MatrixValue], classOf[IntegerValue], MatrixIntegerRelational)
-    kamin.RelationalRegistry.register(classOf[IntegerValue], classOf[MatrixValue], IntegerMatrixRelational)
-    kamin.RelationalRegistry.register(classOf[MatrixValue], classOf[MatrixValue], MatrixMatrixRelational)
 
 object APLLexer extends Lexer(
   Seq(LeftParenthesisToken, RightParenthesisToken, QuoteToken),

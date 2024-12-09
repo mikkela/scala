@@ -4,6 +4,8 @@ import scala.annotation.tailrec
 import scala.io.StdIn
 import scala.collection.mutable
 
+def cannotDivideWithZero = Left("Cannot divide with zero")
+
 trait Evaluator:
   def evaluate(input: String): String
 
@@ -13,22 +15,19 @@ trait ExpressionEvaluator[T <: ExpressionNode]:
                                          (using reader: Reader)
                                          (using falseValue: Value): Either[String, Value]
 
-trait OperandValidator[T1 <: Value, T2 <: Value]:
-  def validateOperands(operand1: Value, operand2: Value): Option[(T1, T2)] =
-    (operand1, operand2) match
-      case (op1: T1 @unchecked, op2: T2 @unchecked) => Some((op1, op2))
-      case _ => None
-
-trait Arithmetic[T1 <: Value, T2 <: Value] extends OperandValidator[T1, T2]:
+trait Arithmetic[T1 <: Value, T2 <: Value]:
   def addition(operand1: T1, operand2: T2): Either[String, Value]
   def subtraction(operand1: T1, operand2: T2): Either[String, Value]
   def multiplication(operand1: T1, operand2: T2): Either[String, Value]
   def division(operand1: T1, operand2: T2): Either[String, Value]
 
-trait Relational[T1 <: Value, T2 <: Value] extends OperandValidator[T1, T2]:
+trait Relational[T1 <: Value, T2 <: Value]:
   def equal(operand1: T1, operand2: T2): Either[String, Value]
   def lessThan(operand1: T1, operand2: T2): Either[String, Value]
   def greaterThan(operand1: T1, operand2: T2): Either[String, Value]
+
+type ArithmeticDispatcher = Dispatcher[Arithmetic]
+type RelationalDispatcher = Dispatcher[Relational]
 
 trait Reader:
   def read(input: String): Either[String, Value] =
@@ -156,26 +155,30 @@ given ExpressionEvaluator[FunctionCallExpressionNode] with
           case Right(params) => invalidFunctionArity(functionDefinition.function, functionDefinition.arguments.length)
           case Left(error) => Left(error)
 
-def performArithmeticOperation(
-                                params: Seq[Value],
-                                operation: (Arithmetic[Value, Value], Value, Value) => Either[String, Value]
-                              ): Either[String, Value] =
-  if (params.size != 2)
-    return Left("Arithmetic operations require exactly two operands")
-
-  val cls1 = params.head.getClass
-  val cls2 = params(1).getClass
-
-  ArithmeticRegistry.get(cls1, cls2) match
-    case Some(arith) =>
-      arith.validateOperands(params.head, params(1)) match
-        case Some((operand1, operand2)) =>
-          operation(arith.asInstanceOf[Arithmetic[Value, Value]], operand1, operand2)
-        case None =>
-          Left(s"Type mismatch: incompatible operands for ${cls1.getName} and ${cls2.getName}")
-
+def arithmeticOperation[T1 <: Value, T2 <: Value](
+                                                   v1: T1,
+                                                   v2: T2,
+                                                   op: Arithmetic[T1, T2] => (T1, T2) => Either[String, Value],
+                                                   opName: String
+                                                 )(using dispatcher: ArithmeticDispatcher): Either[String, Value] =
+  dispatcher.dispatch(v1, v2) match
+    case Some(arithmetic: Arithmetic[T1, T2] @unchecked) =>
+      op(arithmetic)(v1, v2)
     case None =>
-      Left(s"No arithmetic registered for ${cls1.getName} and ${cls2.getName}")
+      Left(s"$opName is not supported for ${v1.getClass} and ${v2.getClass}")
+
+def relationalOperation[T1 <: Value, T2 <: Value](
+                                                   v1: T1,
+                                                   v2: T2,
+                                                   op: Relational[T1, T2] => (T1, T2) => Either[String, Value],
+                                                   opName: String
+                                                 )(using dispatcher: RelationalDispatcher): Either[String, Value] =
+  dispatcher.dispatch(v1, v2) match
+    case Some(relational: Relational[T1, T2] @unchecked) =>
+      op(relational)(v1, v2)
+    case None =>
+      Left(s"$opName is not supported for ${v1.getClass} and ${v2.getClass}")
+
 
 given ExpressionEvaluator[AdditionExpressionNode] with
   extension (t: AdditionExpressionNode) override def evaluateExpression(using environment: Environment)
@@ -185,7 +188,7 @@ given ExpressionEvaluator[AdditionExpressionNode] with
 
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
-      case Right(params) => performArithmeticOperation(params, (arith, op1, op2) => arith.addition(op1, op2))
+      case Right(params) => arithmeticOperation(params.head, params(1), _.addition, "Addition")
 
 given ExpressionEvaluator[SubtractionExpressionNode] with
   extension (t: SubtractionExpressionNode) override def evaluateExpression(using environment: Environment)
@@ -195,7 +198,7 @@ given ExpressionEvaluator[SubtractionExpressionNode] with
 
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
-      case Right(params) => performArithmeticOperation(params, (arith, op1, op2) => arith.subtraction(op1, op2))
+      case Right(params) => arithmeticOperation(params.head, params(1), _.subtraction, "Subtraction")
 
 given ExpressionEvaluator[MultiplicationExpressionNode] with
   extension (t: MultiplicationExpressionNode) override def evaluateExpression(using environment: Environment)
@@ -205,7 +208,7 @@ given ExpressionEvaluator[MultiplicationExpressionNode] with
 
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
-      case Right(params) => performArithmeticOperation(params, (arith, op1, op2) => arith.multiplication(op1, op2))
+      case Right(params) => arithmeticOperation(params.head, params(1), _.multiplication, "Multiplication")
 
 given ExpressionEvaluator[DivisionExpressionNode] with
   extension (t: DivisionExpressionNode) override def evaluateExpression(using environment: Environment)
@@ -215,28 +218,7 @@ given ExpressionEvaluator[DivisionExpressionNode] with
 
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
-      case Right(params) => performArithmeticOperation(params, (arith, op1, op2) => arith.division(op1, op2))
-
-def performRelationalOperation(
-                                params: Seq[Value],
-                                operation: (Relational[Value, Value], Value, Value) => Either[String, Value]
-                              ): Either[String, Value] =
-  if (params.size != 2)
-    return Left("Arithmetic operations require exactly two operands")
-
-  val cls1 = params.head.getClass
-  val cls2 = params(1).getClass
-
-  RelationalRegistry.get(cls1, cls2) match
-    case Some(relational) =>
-      relational.validateOperands(params.head, params(1)) match
-        case Some((operand1, operand2)) =>
-          operation(relational.asInstanceOf[Relational[Value, Value]], operand1, operand2)
-        case None =>
-          Left(s"Type mismatch: incompatible operands for ${cls1.getName} and ${cls2.getName}")
-
-    case None =>
-      Left(s"No relational registered for ${cls1.getName} and ${cls2.getName}")
+      case Right(params) => arithmeticOperation(params.head, params(1), _.division, "Division")
 
 given ExpressionEvaluator[EqualityExpressionNode] with
   extension (t: EqualityExpressionNode) override def evaluateExpression(using environment: Environment)
@@ -245,7 +227,7 @@ given ExpressionEvaluator[EqualityExpressionNode] with
                                                                        (using falseValue: Value): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
-      case Right(params) => performRelationalOperation(params, (relational, op1, op2) => relational.equal(op1, op2))
+      case Right(params) => relationalOperation(params.head, params(1), _.equal, "Equal")
 
 given ExpressionEvaluator[LessThanExpressionNode] with
   extension (t: LessThanExpressionNode) override def evaluateExpression(using environment: Environment)
@@ -254,7 +236,7 @@ given ExpressionEvaluator[LessThanExpressionNode] with
                                                                        (using falseValue: Value): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
-      case Right(params) => performRelationalOperation(params, (relational, op1, op2) => relational.lessThan(op1, op2))
+      case Right(params) => relationalOperation(params.head, params(1), _.lessThan, "Less Than")
 
 given ExpressionEvaluator[GreaterThanExpressionNode] with
   extension (t: GreaterThanExpressionNode) override def evaluateExpression(using environment: Environment)
@@ -263,7 +245,7 @@ given ExpressionEvaluator[GreaterThanExpressionNode] with
                                                                           (using falseValue: Value): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, falseValue) match
       case Left(error) => Left(error)
-      case Right(params) => performRelationalOperation(params, (relational, op1, op2) => relational.greaterThan(op1, op2))
+      case Right(params) => relationalOperation(params.head, params(1), _.greaterThan, "Greater Than")
 
 given ExpressionEvaluator[PrintExpressionNode] with
   extension (t: PrintExpressionNode) override def evaluateExpression(using environment: Environment)
@@ -285,30 +267,6 @@ given ExpressionEvaluator[ReadExpressionNode] with
     val input = StdIn.readLine()
 
     reader.read(input)
-
-object IntegerArithmetic extends Arithmetic[IntegerValue, IntegerValue]:
-  override def addition(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
-    Right(IntegerValue(operand1.value + operand2.value))
-
-  override def subtraction(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
-    Right(IntegerValue(operand1.value - operand2.value))
-
-  override def multiplication(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
-    Right(IntegerValue(operand1.value * operand2.value))
-
-  override def division(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
-    Right(IntegerValue(operand1.value / operand2.value))
-
-object IntegerRelational extends Relational[IntegerValue, IntegerValue]:
-  override def equal(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
-    Right(if operand1.value == operand2.value then IntegerValue.True else IntegerValue.False)
-
-  override def greaterThan(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
-    Right(if operand1.value > operand2.value then IntegerValue.True else IntegerValue.False)
-
-  override def lessThan(operand1: IntegerValue, operand2: IntegerValue): Either[String, Value] =
-    Right(if operand1.value < operand2.value then IntegerValue.True else IntegerValue.False)
-
 
 class TypeRegistry[K, V]:
   private val registry = mutable.Map[K, V]()
@@ -332,50 +290,3 @@ object ExpressionEvaluatorRegistry:
     registry.get(cls).asInstanceOf[Option[ExpressionEvaluator[T]]]
 
   def clear(): Unit = registry.clear()
-
-type ValuePair = (Class[? <: Value], Class[? <: Value])
-
-object ArithmeticRegistry:
-  private val registry = new TypeRegistry[ValuePair, Arithmetic[?, ?]]()
-
-  def register[T1 <: Value, T2 <: Value](cls1: Class[T1], cls2: Class[T2], arithmetic: Arithmetic[T1, T2]): Unit =
-    registry.register((cls1, cls2), arithmetic.asInstanceOf[Arithmetic[?, ?]])
-
-  def get[T1 <: Value, T2 <: Value](cls1: Class[T1], cls2: Class[T2]): Option[Arithmetic[T1, T2]] =
-    registry.get((cls1, cls2)).asInstanceOf[Option[Arithmetic[T1, T2]]]
-
-  def clear(): Unit = registry.clear()
-
-object RelationalRegistry:
-  private val registry = new TypeRegistry[ValuePair, Relational[?, ?]]()
-
-  def register[T1 <: Value, T2 <: Value](cls1: Class[T1], cls2: Class[T2], relational: Relational[T1, T2]): Unit =
-    registry.register((cls1, cls2), relational.asInstanceOf[Relational[?, ?]])
-
-  def get[T1 <: Value, T2 <: Value](cls1: Class[T1], cls2: Class[T2]): Option[Relational[T1, T2]] =
-    registry.get((cls1, cls2)).asInstanceOf[Option[Relational[T1, T2]]]
-
-  def clear(): Unit = registry.clear()
-
-def performOperation[Op[T1 <: Value, T2 <: Value] <: OperandValidator[T1, T2]](
-                                                                                params: Seq[Value],
-                                                                                registry: TypeRegistry[(Class[_ <: Value], Class[_ <: Value]), Op[Value, Value]],
-                                                                                operation: (Op[Value, Value], Value, Value) => Either[String, Value],
-                                                                                operationType: String
-                                                                              ): Either[String, Value] =
-  if (params.size != 2)
-    return Left(s"$operationType operations require exactly two operands")
-
-  val cls1 = params.head.getClass
-  val cls2 = params(1).getClass
-
-  registry.get((cls1, cls2)) match
-    case Some(opHandler) =>
-      opHandler.validateOperands(params.head, params(1)) match
-        case Some((operand1, operand2)) =>
-          operation(opHandler, operand1, operand2)
-        case None =>
-          Left(s"Type mismatch: incompatible operands for ${cls1.getName} and ${cls2.getName}")
-
-    case None =>
-      Left(s"No $operationType registered for ${cls1.getName} and ${cls2.getName}")
