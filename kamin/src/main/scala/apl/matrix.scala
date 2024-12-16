@@ -10,7 +10,7 @@ case class MatrixValue private(value: Vector[Vector[Int]]) extends Value:
 
 object MatrixValue:
   def createMatrix(values: Seq[Seq[Int]]): MatrixValue =
-    if (values.isEmpty || values.head.isEmpty) then
+    if values.isEmpty || values.head.isEmpty then
       emptyMatrix
     else
       MatrixValue(values.map(_.toVector).toVector)

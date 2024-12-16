@@ -2,7 +2,7 @@ package kamin.lisp
 
 import kamin.{BasicLanguageFamilyParserContext, ExpressionNode, IntegerValue, IntegerValueExpressionNode, IntegerValueToken, LeftParenthesisToken, NameToken, Parser, PeekingIterator, QuoteToken, RightParenthesisToken, Token, TokenExtensions, checkTokensForPresence, invalidEndOfProgram, invalidToken, parseListOfElements, parseOperator}
 
-def isSymbolPart(token: Token) = (token.isToken(LeftParenthesisToken) || !token.isToken(RightParenthesisToken))
+def isSymbolPart(token: Token) = token.isToken(LeftParenthesisToken) || !token.isToken(RightParenthesisToken)
 trait SExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyParserContext]:
   override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, ExpressionNode] =
     checkTokensForPresence(tokens, _.isToken(QuoteToken), t => isSymbolPart(t)) match

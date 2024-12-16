@@ -115,8 +115,8 @@ def catenation(value1: Value, value2: Value): Either[String, VectorValue] =
 def indexGeneration(index: Value): Either[String, VectorValue] =
   index match
     case v: IntegerValue => Right(VectorValue.createVector(Seq.range(1, v.value + 1)))
-    case v: VectorValue if !v.value.isEmpty => Right(VectorValue.createVector(Seq.range(1, v.value.head + 1)))
-    case v: MatrixValue if !v.value.isEmpty => Right(VectorValue.createVector(Seq.range(1, v.value.head.head + 1)))
+    case v: VectorValue if v.value.nonEmpty => Right(VectorValue.createVector(Seq.range(1, v.value.head + 1)))
+    case v: MatrixValue if v.value.nonEmpty => Right(VectorValue.createVector(Seq.range(1, v.value.head.head + 1)))
     case _ => Left("Invalid parameters")
 
 
