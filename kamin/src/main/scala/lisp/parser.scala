@@ -2,22 +2,22 @@ package kamin.lisp
 
 import kamin.{BasicLanguageFamilyParserContext, ExpressionNode, IntegerValue, IntegerValueExpressionNode, IntegerValueToken, LeftParenthesisToken, NameToken, Parser, PeekingIterator, QuoteToken, RightParenthesisToken, Token, TokenExtensions, checkTokensForPresence, invalidEndOfProgram, invalidToken, parseListOfElements, parseOperator}
 
-
+def isSymbolPart(token: Token) = (token.isToken(LeftParenthesisToken) || !token.isToken(RightParenthesisToken))
 trait SExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyParserContext]:
   override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, ExpressionNode] =
-    checkTokensForPresence(tokens, _.isToken(QuoteToken), t => (t.isIntegerValueToken || t.isNameToken || t.isToken(LeftParenthesisToken))) match
+    checkTokensForPresence(tokens, _.isToken(QuoteToken), t => isSymbolPart(t)) match
       case Right(_) =>
         tokens.consumeTokens(1)
         parseSExpression(tokens, context)
       case _ => super.parse(tokens)
   def parseSExpression(tokens: PeekingIterator[Token], context: BasicLanguageFamilyParserContext): Either[String, SExpressionNode] =
-    checkTokensForPresence(tokens, t => (t.isIntegerValueToken || t.isNameToken || t.isToken(LeftParenthesisToken))) match
+    checkTokensForPresence(tokens, t => isSymbolPart(t)) match
       case Right(Seq(integer: IntegerValueToken)) =>
         context.parseExpression(tokens) match
           case Right(value: IntegerValueExpressionNode) => Right(SExpressionNode(value))
           case Right(_) => Left("Integer did not parse to integer value expression in parsing S-expression")
           case Left(error) => Left(error)
-      case Right(Seq(symbol: NameToken)) =>
+      case Right(Seq(symbol)) if symbol != LeftParenthesisToken =>
         tokens.consumeTokens(1)
         Right(SExpressionNode(SymbolExpressionNode(symbol.literal)))
       case Right(Seq(LeftParenthesisToken)) =>
@@ -35,6 +35,7 @@ trait SExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyPa
             tokens.peek(1) match
               case List(token) => invalidToken(token)
               case _ => invalidEndOfProgram
+
 
 trait ConsExpressionNodeParser extends Parser[ExpressionNode, BasicLanguageFamilyParserContext]:
   override def parse(tokens: PeekingIterator[Token])(using context: BasicLanguageFamilyParserContext): Either[String, ExpressionNode] =
