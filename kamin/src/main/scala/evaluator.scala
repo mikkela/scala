@@ -148,14 +148,10 @@ given ExpressionEvaluator[FunctionCallExpressionNode] with
       case Some(functionDefinition) =>
         parameters match
           case Right(params) if params.length == functionDefinition.arguments.length =>
-            environment.openScope(functionDefinition.arguments)
-            functionDefinition.arguments.zip(params).foreach((a, p) => environment.set(a, p))
+            val newEnvironment = EnvironmentFrame(GlobalEnvironment, functionDefinition.arguments)
+            functionDefinition.arguments.zip(params).foreach((a, p) => newEnvironment.set(a, p))
 
-            functionDefinition.expression.evaluateExpression(using environment)(using functionDefinitionTable) match
-              case Left(error) => Left(error)
-              case Right(result) =>
-                environment.closeScope()
-                Right(result)
+            functionDefinition.expression.evaluateExpression(using newEnvironment)(using functionDefinitionTable) 
           case Right(params) => invalidFunctionArity(functionDefinition.function, functionDefinition.arguments.length)
           case Left(error) => Left(error)
 

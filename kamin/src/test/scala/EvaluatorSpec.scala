@@ -20,7 +20,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = IntegerValueExpressionNode(100)
 
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using new FunctionDefinitionTable {})
         (using new Reader {})
         (using new BooleanDefinition{
@@ -33,7 +33,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
 
   describe("evaluateExpression for VariableNode") {
     it("should return the evaluated expression registered at the variable") {
-      val environment = GlobalAndLocalScopeEnvironment()
+      val environment = GlobalEnvironment
       environment.set("x", IntegerValue(20))
       val sut = VariableExpressionNode("x")
 
@@ -51,7 +51,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = VariableExpressionNode("x")
 
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using new FunctionDefinitionTable{})
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -66,7 +66,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = IfExpressionNode(IntegerValueExpressionNode(1), IntegerValueExpressionNode(2), IntegerValueExpressionNode(3))
 
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using new FunctionDefinitionTable{})
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -79,7 +79,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = IfExpressionNode(IntegerValueExpressionNode(0), IntegerValueExpressionNode(2), IntegerValueExpressionNode(3))
 
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using new FunctionDefinitionTable{})
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -92,7 +92,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = IfExpressionNode(VariableExpressionNode("x"), IntegerValueExpressionNode(2), IntegerValueExpressionNode(3))
 
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using new FunctionDefinitionTable{}) 
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -104,7 +104,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
 
   describe("evaluateExpression for SetExpressionNode") {
     it("should register the evaluation result in the environment and return it as well") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       val sut = SetExpressionNode("foo", IntegerValueExpressionNode(265))
 
       sut.evaluateExpression
@@ -122,7 +122,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = SetExpressionNode("wrong", VariableExpressionNode("x"))
 
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -137,7 +137,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = WhileExpressionNode(IntegerValueExpressionNode(0), VariableExpressionNode("x"))
 
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = IntegerValue.False
@@ -147,7 +147,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     }
 
     it("should only evaluateExpression the body if the test returns non-zero") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       env.set("x", IntegerValue(1))
       val sut = WhileExpressionNode(VariableExpressionNode("x"), SetExpressionNode("x", IntegerValueExpressionNode(0)))
 
@@ -166,7 +166,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = WhileExpressionNode(VariableExpressionNode("x"), IntegerValueExpressionNode(100))
 
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -179,7 +179,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
       val sut = WhileExpressionNode(IntegerValueExpressionNode(100), VariableExpressionNode("x"))
 
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -191,7 +191,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
 
   describe("evaluateExpression for BeginExpressionNode") {
     it("should return the result of the last expression after evaluating them all") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       val sut = BeginExpressionNode(Seq(
         SetExpressionNode("x", IntegerValueExpressionNode(2)),
         SetExpressionNode("y", IntegerValueExpressionNode(25)),
@@ -210,7 +210,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     }
 
     it("should return the the error if one of the expression returns an error") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       val sut = BeginExpressionNode(Seq(
         SetExpressionNode("x", IntegerValueExpressionNode(2)),
         VariableExpressionNode("y"),
@@ -230,7 +230,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
 
   describe("evaluateExpression for FunctionCallExpressionNode") {
     it("should return the result of the function body when called") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       val table = new FunctionDefinitionTable {}
       table.register(
         FunctionDefinitionNode(
@@ -252,7 +252,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     }
 
     it("should remove the local scope environment afterwards") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       env.set("a", IntegerValue(2))
       env.set("b", IntegerValue(3))
       val table = new FunctionDefinitionTable {}
@@ -278,7 +278,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     }
 
     it("should change the local scope only if exists and then the global next") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       env.set("a", IntegerValue(2))
       env.set("b", IntegerValue(3))
       val table = new FunctionDefinitionTable {}
@@ -307,7 +307,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     }
     
     it("should return the the error if one of the parameter evaluations returns an error") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       val sut = FunctionCallExpressionNode("foo", Seq(
         VariableExpressionNode("y"),
         IntegerValueExpressionNode(123)))
@@ -331,7 +331,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     }
 
     it("should return the the error if the function call have too few parameters") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       val sut = FunctionCallExpressionNode("foo", Seq(IntegerValueExpressionNode(123)))
       val table = new FunctionDefinitionTable {}
       table.register(
@@ -352,7 +352,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     }
 
     it("should return the the error if the function call have too many parameters") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       val sut = FunctionCallExpressionNode("foo",
         Seq(IntegerValueExpressionNode(123), IntegerValueExpressionNode(234), IntegerValueExpressionNode(542)))
       val table = new FunctionDefinitionTable {}
@@ -374,7 +374,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     }
 
     it("should return the the error if the function evaluation fails") {
-      val env = GlobalAndLocalScopeEnvironment()
+      val env = GlobalEnvironment
       val sut = FunctionCallExpressionNode("foo", Seq(IntegerValueExpressionNode(123)))
       val table = new FunctionDefinitionTable {}
       table.register(
@@ -399,7 +399,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the result of addition of the operands when called") {
       val sut = AdditionExpressionNode(IntegerValueExpressionNode(10), IntegerValueExpressionNode(20))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -411,7 +411,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the the error if one of the parameter evaluations returns an error") {
       val sut = AdditionExpressionNode(IntegerValueExpressionNode(10), VariableExpressionNode("y"))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -425,7 +425,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the result of subtraction of the operands when called") {
       val sut = SubtractionExpressionNode(IntegerValueExpressionNode(30), IntegerValueExpressionNode(20))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -437,7 +437,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the the error if one of the parameter evaluations returns an error") {
       val sut = SubtractionExpressionNode(IntegerValueExpressionNode(10), VariableExpressionNode("y"))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -451,7 +451,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the result of multiplication of the operands when called") {
       val sut = MultiplicationExpressionNode(IntegerValueExpressionNode(30), IntegerValueExpressionNode(20))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -463,7 +463,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the the error if one of the parameter evaluations returns an error") {
       val sut = MultiplicationExpressionNode(IntegerValueExpressionNode(10), VariableExpressionNode("y"))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -477,7 +477,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the result of division of the operands when called") {
       val sut = DivisionExpressionNode(IntegerValueExpressionNode(40), IntegerValueExpressionNode(20))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -489,7 +489,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the the error if one of the parameter evaluations returns an error") {
       val sut = DivisionExpressionNode(IntegerValueExpressionNode(10), VariableExpressionNode("y"))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -503,7 +503,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return 1 if the operands are equal") {
       val sut = EqualityExpressionNode(IntegerValueExpressionNode(40), IntegerValueExpressionNode(40))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = IntegerValue.False
@@ -515,7 +515,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return 0 if the operands are not equal") {
       val sut = EqualityExpressionNode(IntegerValueExpressionNode(40), IntegerValueExpressionNode(50))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = IntegerValue.False
@@ -527,7 +527,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the the error if one of the parameter evaluations returns an error") {
       val sut = EqualityExpressionNode(IntegerValueExpressionNode(10), VariableExpressionNode("y"))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -541,7 +541,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return 0 if the first operand is greater than the second") {
       val sut = LessThanExpressionNode(IntegerValueExpressionNode(70), IntegerValueExpressionNode(40))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = IntegerValue.False
@@ -553,7 +553,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return 1 if the first operand is smaller than the second") {
       val sut = LessThanExpressionNode(IntegerValueExpressionNode(10), IntegerValueExpressionNode(50))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = IntegerValue.False
@@ -565,7 +565,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the the error if one of the parameter evaluations returns an error") {
       val sut = LessThanExpressionNode(IntegerValueExpressionNode(10), VariableExpressionNode("y"))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -579,7 +579,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return 1 if the first operand is greater than the second") {
       val sut = GreaterThanExpressionNode(IntegerValueExpressionNode(70), IntegerValueExpressionNode(40))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = IntegerValue.False
@@ -591,7 +591,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return 0 if the first operand is smaller than the second") {
       val sut = GreaterThanExpressionNode(IntegerValueExpressionNode(10), IntegerValueExpressionNode(50))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = IntegerValue.False
@@ -603,7 +603,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the the error if one of the parameter evaluations returns an error") {
       val sut = GreaterThanExpressionNode(IntegerValueExpressionNode(10), VariableExpressionNode("y"))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -617,7 +617,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the result of printing of the operand when called") {
       val sut = PrintExpressionNode(IntegerValueExpressionNode(400))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???
@@ -629,7 +629,7 @@ class ExpressionEvaluatorSpec extends AnyFunSpec
     it("should return the the error if one of the parameter evaluations returns an error") {
       val sut = PrintExpressionNode(VariableExpressionNode("y"))
       sut.evaluateExpression
-        (using GlobalAndLocalScopeEnvironment())
+        (using GlobalEnvironment)
         (using FunctionDefinitionTable())
         (using new Reader {})(using new BooleanDefinition{
           override def falseValue: Value = ???

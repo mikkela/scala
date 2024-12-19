@@ -1,6 +1,6 @@
 package kamin.lisp
 
-import kamin.{AdditionExpressionNodeParser, AsteriskToken, BasicLanguageFamilyParserContext, BeginExpressionNodeParser, BeginToken, BooleanDefinition, DefineToken, DivisionExpressionNodeParser, Environment, EqualToken, EqualityExpressionNodeParser, Evaluator, ExpressionEvaluator, ExpressionNode, FunctionCallExpressionNodeParser, FunctionDefinitionNode, FunctionDefinitionNodeParser, FunctionDefinitionTable, GlobalAndLocalScopeEnvironment, GreaterThanExpressionNodeParser, GreaterThanToken, IfExpressionNodeParser, IfToken, IntegerValue, IntegerValueExpressionNodeParser, IntegerValueReader, LeftParenthesisToken, LessThanExpressionNodeParser, LessThanToken, Lexer, MinusToken, MultiplicationExpressionNodeParser, Parser, PeekingIterator, PlusToken, PrintToken, QuoteToken, ReadToken, Reader, RightParenthesisToken, SetExpressionNodeParser, SetToken, SlashToken, SubtractionExpressionNodeParser, Token, Value, VariableExpressionNodeParser, WhileExpressionNodeParser, WhileToken, given_ExpressionEvaluator_ExpressionNode}
+import kamin.{AdditionExpressionNodeParser, AsteriskToken, BasicLanguageFamilyParserContext, BeginExpressionNodeParser, BeginToken, BooleanDefinition, DefineToken, DivisionExpressionNodeParser, Environment, EqualToken, EqualityExpressionNodeParser, Evaluator, ExpressionEvaluator, ExpressionNode, FunctionCallExpressionNodeParser, FunctionDefinitionNode, FunctionDefinitionNodeParser, FunctionDefinitionTable, GlobalEnvironment, GreaterThanExpressionNodeParser, GreaterThanToken, IfExpressionNodeParser, IfToken, IntegerValue, IntegerValueExpressionNodeParser, IntegerValueReader, LeftParenthesisToken, LessThanExpressionNodeParser, LessThanToken, Lexer, MinusToken, MultiplicationExpressionNodeParser, Parser, PeekingIterator, PlusToken, PrintToken, QuoteToken, ReadToken, Reader, RightParenthesisToken, SetExpressionNodeParser, SetToken, SlashToken, SubtractionExpressionNodeParser, Token, Value, VariableExpressionNodeParser, WhileExpressionNodeParser, WhileToken, given_ExpressionEvaluator_ExpressionNode}
 
 object RegistriesSetup:
   def initialize(): Unit =
@@ -63,7 +63,6 @@ object LispReader extends IntegerValueReader
 
 class LispEvaluator() extends Evaluator:
   val functionDefinitionTable: FunctionDefinitionTable = FunctionDefinitionTable()
-  val environment: Environment = GlobalAndLocalScopeEnvironment()
   val reader: Reader = LispReader
   override def evaluate(input: String): String =
     LispParser.parse(PeekingIterator[Token](LispLexer.tokens(input)))(using LispParserContext) match
@@ -72,7 +71,7 @@ class LispEvaluator() extends Evaluator:
         functionDefinitionTable.register(f)
         f.function
       case Right(e: ExpressionNode) =>
-        e.evaluateExpression(using environment)(using functionDefinitionTable)(using reader)(using new BooleanDefinition {
+        e.evaluateExpression(using GlobalEnvironment)(using functionDefinitionTable)(using reader)(using new BooleanDefinition {
           override def trueValue: Value = SymbolValue.T
           override def falseValue: Value = ListValue.nil
         }) match
