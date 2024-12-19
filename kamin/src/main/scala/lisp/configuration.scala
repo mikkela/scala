@@ -19,7 +19,7 @@ object RegistriesSetup:
 object LispLexer extends Lexer(
   Seq(LeftParenthesisToken, RightParenthesisToken, QuoteToken),
   Seq(EqualToken, LessThanToken, GreaterThanToken, PlusToken, MinusToken, AsteriskToken, SlashToken, PrintToken,
-    ReadToken, DefineToken, IfToken, WhileToken, SetToken, BeginToken, ConsToken, CarToken, CdrToken, NumberTestToken,
+    DefineToken, IfToken, WhileToken, SetToken, BeginToken, ConsToken, CarToken, CdrToken, NumberTestToken,
     SymbolTestToken, ListTestToken, NullTestToken)
 )
 
