@@ -49,13 +49,15 @@ given ExpressionEvaluator[ExpressionNode] with
     case Some(evaluator) => evaluator.asInstanceOf[ExpressionEvaluator[t.type]].evaluateExpression(t)(using environment)(using functionDefinitionTable)(using reader)(using booleanDefinition)
     case None            => Left(s"No evaluator registered for ${t.getClass.getName}")
 
+def evaluate(t: IntegerValueExpressionNode): Either[String, Value] = Right(t.integerValue)
 
 given ExpressionEvaluator[IntegerValueExpressionNode] with
   extension (t: IntegerValueExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                            (using functionDefinitionTable: FunctionDefinitionTable)
                                                                            (using reader: Reader)
                                                                            (using booleanDefinition: BooleanDefinition): Either[String, Value] =
-    Right(t.integerValue)
+    evaluate(t)
+
 
 given ExpressionEvaluator[VariableExpressionNode] with
   extension (t: VariableExpressionNode) override def evaluateExpression(using environment: Environment)
@@ -151,7 +153,7 @@ given ExpressionEvaluator[FunctionCallExpressionNode] with
             val newEnvironment = EnvironmentFrame(GlobalEnvironment, functionDefinition.arguments)
             functionDefinition.arguments.zip(params).foreach((a, p) => newEnvironment.set(a, p))
 
-            functionDefinition.expression.evaluateExpression(using newEnvironment)(using functionDefinitionTable) 
+            functionDefinition.expression.evaluateExpression(using newEnvironment)(using functionDefinitionTable)
           case Right(params) => invalidFunctionArity(functionDefinition.function, functionDefinition.arguments.length)
           case Left(error) => Left(error)
 
@@ -181,6 +183,8 @@ def relationalOperation[T1 <: Value, T2 <: Value](
       Left(s"$opName is not supported for ${v1.getClass} and ${v2.getClass}")
 
 
+def addition(operand1: Value, operand2: Value): Either[String, Value] =
+  arithmeticOperation(operand1, operand2, _.addition, "Addition")
 given ExpressionEvaluator[AdditionExpressionNode] with
   extension (t: AdditionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                        (using functionDefinitionTable: FunctionDefinitionTable)
@@ -189,8 +193,10 @@ given ExpressionEvaluator[AdditionExpressionNode] with
 
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, booleanDefinition) match
       case Left(error) => Left(error)
-      case Right(params) => arithmeticOperation(params.head, params(1), _.addition, "Addition")
+      case Right(params) => addition(params.head, params(1))
 
+def subtraction(operand1: Value, operand2: Value): Either[String, Value] =
+  arithmeticOperation(operand1, operand2, _.subtraction, "Subtraction")
 given ExpressionEvaluator[SubtractionExpressionNode] with
   extension (t: SubtractionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                           (using functionDefinitionTable: FunctionDefinitionTable)
@@ -199,8 +205,10 @@ given ExpressionEvaluator[SubtractionExpressionNode] with
 
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, booleanDefinition) match
       case Left(error) => Left(error)
-      case Right(params) => arithmeticOperation(params.head, params(1), _.subtraction, "Subtraction")
+      case Right(params) => subtraction(params.head, params(1))
 
+def multiplication(operand1: Value, operand2: Value): Either[String, Value] =
+  arithmeticOperation(operand1, operand2, _.multiplication, "Multiplication")
 given ExpressionEvaluator[MultiplicationExpressionNode] with
   extension (t: MultiplicationExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                              (using functionDefinitionTable: FunctionDefinitionTable)
@@ -209,8 +217,10 @@ given ExpressionEvaluator[MultiplicationExpressionNode] with
 
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, booleanDefinition) match
       case Left(error) => Left(error)
-      case Right(params) => arithmeticOperation(params.head, params(1), _.multiplication, "Multiplication")
+      case Right(params) => multiplication(params.head, params(1))
 
+def division(operand1: Value, operand2: Value): Either[String, Value] =
+  arithmeticOperation(operand1, operand2, _.division, "Division")
 given ExpressionEvaluator[DivisionExpressionNode] with
   extension (t: DivisionExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                        (using functionDefinitionTable: FunctionDefinitionTable)
@@ -219,8 +229,10 @@ given ExpressionEvaluator[DivisionExpressionNode] with
 
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, booleanDefinition) match
       case Left(error) => Left(error)
-      case Right(params) => arithmeticOperation(params.head, params(1), _.division, "Division")
+      case Right(params) => division(params.head, params(1))
 
+def equal(operand1: Value, operand2: Value)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
+  relationalOperation(operand1, operand2, _.equal, "Equal")
 given ExpressionEvaluator[EqualityExpressionNode] with
   extension (t: EqualityExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                        (using functionDefinitionTable: FunctionDefinitionTable)
@@ -228,8 +240,10 @@ given ExpressionEvaluator[EqualityExpressionNode] with
                                                                        (using booleanDefinition: BooleanDefinition): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, booleanDefinition) match
       case Left(error) => Left(error)
-      case Right(params) => relationalOperation(params.head, params(1), _.equal, "Equal")
+      case Right(params) => equal(params.head, params(1))
 
+def lessThan(operand1: Value, operand2: Value)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
+  relationalOperation(operand1, operand2, _.lessThan, "Less Than")
 given ExpressionEvaluator[LessThanExpressionNode] with
   extension (t: LessThanExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                        (using functionDefinitionTable: FunctionDefinitionTable)
@@ -237,8 +251,10 @@ given ExpressionEvaluator[LessThanExpressionNode] with
                                                                        (using booleanDefinition: BooleanDefinition): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, booleanDefinition) match
       case Left(error) => Left(error)
-      case Right(params) => relationalOperation(params.head, params(1), _.lessThan, "Less Than")
+      case Right(params) => lessThan(params.head, params(1))
 
+def greaterThan(operand1: Value, operand2: Value)(using booleanDefinition: BooleanDefinition): Either[String, Value] =
+  relationalOperation(operand1, operand2, _.greaterThan, "Greater Than")
 given ExpressionEvaluator[GreaterThanExpressionNode] with
   extension (t: GreaterThanExpressionNode) override def evaluateExpression(using environment: Environment)
                                                                           (using functionDefinitionTable: FunctionDefinitionTable)
@@ -246,7 +262,7 @@ given ExpressionEvaluator[GreaterThanExpressionNode] with
                                                                           (using booleanDefinition: BooleanDefinition): Either[String, Value] =
     evaluateParameters(Seq(t.operand1, t.operand2), environment, functionDefinitionTable, reader, booleanDefinition) match
       case Left(error) => Left(error)
-      case Right(params) => relationalOperation(params.head, params(1), _.greaterThan, "Greater Than")
+      case Right(params) => greaterThan(params.head, params(1))
 
 given ExpressionEvaluator[PrintExpressionNode] with
   extension (t: PrintExpressionNode) override def evaluateExpression(using environment: Environment)
